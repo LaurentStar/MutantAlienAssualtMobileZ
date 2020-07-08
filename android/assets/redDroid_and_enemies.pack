@@ -1,0 +1,47 @@
+
+redDroid_and_enemies.png
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+brain_downward_pounce
+  rotate: false
+  xy: 1, 1
+  size: 120, 24
+  orig: 120, 24
+  offset: 0, 0
+  index: -1
+red_droid_walk
+  rotate: false
+  xy: 123, 3
+  size: 117, 22
+  orig: 117, 22
+  offset: 0, 0
+  index: -1
+red_droid_idle
+  rotate: false
+  xy: 242, 1
+  size: 110, 24
+  orig: 110, 24
+  offset: 0, 0
+  index: -1
+red_droid_jump
+  rotate: false
+  xy: 354, 3
+  size: 102, 22
+  orig: 102, 22
+  offset: 0, 0
+  index: -1
+green_ram_galopping
+  rotate: false
+  xy: 458, 5
+  size: 92, 20
+  orig: 92, 20
+  offset: 0, 0
+  index: -1
+brain_idle
+  rotate: false
+  xy: 552, 3
+  size: 44, 22
+  orig: 44, 22
+  offset: 0, 0
+  index: -1
