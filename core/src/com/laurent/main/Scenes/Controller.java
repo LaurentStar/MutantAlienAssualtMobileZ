@@ -114,10 +114,10 @@ public class Controller {
         });
 
 
-        table.add(left_image).size(MutantAlienAssualtMobileZ.V_WIDTH *10/100, left_image.getHeight());
-        table.add(right_image).size(MutantAlienAssualtMobileZ.V_WIDTH *40/100, right_image.getHeight());
-        table.add(fire_image).size(MutantAlienAssualtMobileZ.V_WIDTH *40/100, fire_image.getHeight());
-        table.add(jump_image).size(MutantAlienAssualtMobileZ.V_WIDTH *10/100, jump_image.getHeight());
+        table.add(left_image).size(MutantAlienAssualtMobileZ.V_WIDTH *15/100, left_image.getHeight());
+        table.add(right_image).size(MutantAlienAssualtMobileZ.V_WIDTH *35/100, right_image.getHeight());
+        table.add(fire_image).size(MutantAlienAssualtMobileZ.V_WIDTH *35/100, fire_image.getHeight());
+        table.add(jump_image).size(MutantAlienAssualtMobileZ.V_WIDTH *15/100, jump_image.getHeight());
 
         stage.addActor(table);
     }

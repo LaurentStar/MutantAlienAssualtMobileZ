@@ -1,15 +1,14 @@
-package com.laurent.main.Sprites;
+package com.laurent.main.Sprites.TileObjects;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.physics.box2d.World;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Scenes.Hud;
+import com.laurent.main.Screens.PlayScreen;
 
 public class Brick extends InteractiveTileObject {
-    public Brick(World world, TiledMap map, Rectangle bounds) {
-        super(world, map, bounds);
+    public Brick(PlayScreen screen, Rectangle bounds) {
+        super(screen, bounds);
         fixture.setUserData(this);
         setCategoryFilter(MutantAlienAssualtMobileZ.BRICK_BIT);
     }

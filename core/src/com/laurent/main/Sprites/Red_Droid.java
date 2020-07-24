@@ -1,5 +1,6 @@
 package com.laurent.main.Sprites;
 
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -21,17 +22,22 @@ public class Red_Droid extends Sprite {
 
     public World world;
     public Body box_2d_body;
-    private TextureRegion red_droid_idle;
+    private PlayScreen screen;
+    private Sound sound;
     private float state_timer;
+    //private TextureRegion red_droid_idle;
+    private Animation<TextureRegion> red_droid_idle;
     private Animation<TextureRegion> red_droid_running;
     private Animation<TextureRegion> red_droid_jumping;
     private Animation<TextureRegion> red_droid_falling;
 
     boolean leftFalse_rightTrue;
 
-    public Red_Droid(World world, PlayScreen screen){
-        super (screen.getAtlas().findRegion("red_droid_idle"));
-        this.world = world;
+    public Red_Droid(PlayScreen screen){
+        //super (screen.getAtlas().findRegion("red_droid_idle_20x21"));
+        this.world = screen.getWorld();
+        this.screen = screen;
+
         current_state = State.IDLE;
         previous_state = State.IDLE;
         state_timer = 0;
@@ -40,34 +46,43 @@ public class Red_Droid extends Sprite {
         Array<TextureRegion> frames = new Array<TextureRegion>();
 
 
+        // Idle Animation
+        for (int e=0; e<1; e++)
+            for (int i=0; i<5; i++)
+                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i*20, 0, 20, 21));
+            //Get frames in reverse
+            for (int i=4; i>=0; i--)
+                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i*20, 0, 20, 21));
+        red_droid_idle = new Animation(0.25f, frames);
+        frames.clear();
+
 
         // Running Animation
-        for (int i=1; i<6; i++){
-            frames.add(new TextureRegion(getTexture(), i*16, 0, 16, 16));
-        }
+        for (int i=0; i<6; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_run_21x20"), i*21, 0, 21, 20));
         red_droid_running = new Animation(0.1f, frames);
         frames.clear();
 
 
         // Jumping Animation
-        for (int i=6; i<11; i++){
-            frames.add(new TextureRegion(getTexture(), i*16, 0, 16, 16));
-        }
+        for (int i=1; i<5; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_jump_20x21"), i*20, 0, 20, 21));
         red_droid_jumping = new Animation(0.1f, frames);
         frames.clear();
 
         // Falling Animation
-        for (int i=9; i<11; i++){
-            frames.add(new TextureRegion(getTexture(), i*16, 0, 16, 16));
-        }
+        for (int i=1; i<2; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_fall_20x21"), i*20, 0, 20, 21));
         red_droid_falling = new Animation(0.1f, frames);
         frames.clear();
 
 
         defineRedDroid();
-        red_droid_idle = new TextureRegion(getTexture(), 128, 6, 17, 17);
+
+
         setBounds(0, 0, 16/MutantAlienAssualtMobileZ.PPM, 16/MutantAlienAssualtMobileZ.PPM);
-        setRegion(red_droid_idle);
+
+        setRegion(red_droid_idle.getKeyFrame(state_timer, true));
     }
 
     public void update(float dt){
@@ -86,7 +101,7 @@ public class Red_Droid extends Sprite {
             case RUNNING: region = red_droid_running.getKeyFrame(state_timer, true); break;
             case FALLING: region = red_droid_falling.getKeyFrame(state_timer, true); break;
             case IDLE:
-            default: region = red_droid_idle; break;
+            default: region = red_droid_idle.getKeyFrame(state_timer, true);; break;
         }
 
         if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !region.isFlipX()) {
@@ -120,9 +135,11 @@ public class Red_Droid extends Sprite {
 
 
     public void jump(){
-        if ( current_state != State.JUMPING ) {
+        if ( current_state != State.JUMPING && current_state != State.FALLING) {
             box_2d_body.applyLinearImpulse(new Vector2(0, 2.4f), box_2d_body.getWorldCenter(), true);
             current_state = State.JUMPING;
+            sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_JUMP);
+            sound.play();
         }
         else if (current_state == State.JUMPING && box_2d_body.getLinearVelocity().y > 0){
             box_2d_body.applyForce(new Vector2(0, 7.4f), box_2d_body.getWorldCenter(), true);
@@ -142,10 +159,15 @@ public class Red_Droid extends Sprite {
                 13 / 2 / MutantAlienAssualtMobileZ.PPM);//.setRadius(6 / MutantAlienAssualtMobileZ.PPM);
 
         fdef.filter.categoryBits = MutantAlienAssualtMobileZ.RED_DROID_BIT;
-        fdef.filter.maskBits = MutantAlienAssualtMobileZ.DEFUALT_BIT | MutantAlienAssualtMobileZ.BRICK_BIT | MutantAlienAssualtMobileZ.COIN_BIT;
+        fdef.filter.maskBits = MutantAlienAssualtMobileZ.DEFUALT_BIT |
+                                MutantAlienAssualtMobileZ.BRICK_BIT |
+                                MutantAlienAssualtMobileZ.COIN_BIT |
+                                MutantAlienAssualtMobileZ.ENEMY_BIT |
+                                MutantAlienAssualtMobileZ.ENEMY_HEAD_BIT |
+                                MutantAlienAssualtMobileZ.ITEM_BIT;
 
         fdef.shape = shape;
-        box_2d_body.createFixture(fdef);
+        box_2d_body.createFixture(fdef).setUserData(this);
 
         EdgeShape head = new EdgeShape();
         head.set(new Vector2(-2 / MutantAlienAssualtMobileZ.PPM, 7 / MutantAlienAssualtMobileZ.PPM),
@@ -154,6 +176,10 @@ public class Red_Droid extends Sprite {
         fdef.shape = head;
         fdef.isSensor = true;
         box_2d_body.createFixture(fdef).setUserData("head");
+    }
 
+    public void hit(){
+        sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_DAMAGE);
+        sound.play();
     }
 }

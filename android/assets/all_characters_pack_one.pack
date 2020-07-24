@@ -1,0 +1,54 @@
+all_characters_pack_one.png
+size: 240, 65
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+green_ram_gallope_20x21
+  rotate: false
+  xy: 0, 20
+  size: 100, 21
+  orig: 100, 21
+  offset: 0, 0
+  index: -1
+idle
+  rotate: false
+  xy: 100, 41
+  size: 110, 24
+  orig: 110, 24
+  offset: 0, 0
+  index: -1
+red_droid_fall_20x21
+  rotate: false
+  xy: 100, 20
+  size: 40, 21
+  orig: 40, 21
+  offset: 0, 0
+  index: -1
+red_droid_idle_20x21
+  rotate: false
+  xy: 140, 20
+  size: 100, 21
+  orig: 100, 21
+  offset: 0, 0
+  index: -1
+red_droid_jump_20x21
+  rotate: false
+  xy: 0, 41
+  size: 100, 21
+  orig: 100, 21
+  offset: 0, 0
+  index: -1
+red_droid_run_21x20
+  rotate: false
+  xy: 0, 0
+  size: 126, 20
+  orig: 126, 20
+  offset: 0, 0
+  index: -1
+walk
+  rotate: false
+  xy: 126, 0
+  size: 106, 20
+  orig: 106, 20
+  offset: 0, 0
+  index: -1
