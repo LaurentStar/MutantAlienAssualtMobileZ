@@ -16,7 +16,7 @@ import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Screens.PlayScreen;
 
 public class Red_Droid extends Sprite {
-    public enum State {FALLING, JUMPING, RUNNING, IDLE};
+    public enum State {FALLING, JUMPING, RUNNING, IDLE, DEAD};
     public State current_state;
     public State previous_state;
 
@@ -26,12 +26,14 @@ public class Red_Droid extends Sprite {
     private Sound sound;
     private float state_timer;
     //private TextureRegion red_droid_idle;
+    private TextureRegion red_droid_dead;
     private Animation<TextureRegion> red_droid_idle;
     private Animation<TextureRegion> red_droid_running;
     private Animation<TextureRegion> red_droid_jumping;
     private Animation<TextureRegion> red_droid_falling;
 
     boolean leftFalse_rightTrue;
+    boolean red_droid_is_dead;
 
     public Red_Droid(PlayScreen screen){
         //super (screen.getAtlas().findRegion("red_droid_idle_20x21"));
@@ -42,6 +44,7 @@ public class Red_Droid extends Sprite {
         previous_state = State.IDLE;
         state_timer = 0;
         leftFalse_rightTrue = true;
+        red_droid_is_dead = false;
 
         Array<TextureRegion> frames = new Array<TextureRegion>();
 
@@ -76,6 +79,9 @@ public class Red_Droid extends Sprite {
         red_droid_falling = new Animation(0.1f, frames);
         frames.clear();
 
+        //Dead
+        red_droid_dead = new TextureRegion(screen.getAtlas().findRegion("red_droid_dead_20x21"), 0, 0, 20, 21);
+
 
         defineRedDroid();
 
@@ -97,6 +103,7 @@ public class Red_Droid extends Sprite {
 
         TextureRegion region;
         switch(current_state){
+            case DEAD: region = red_droid_dead; break;
             case JUMPING: region =  red_droid_jumping.getKeyFrame(state_timer); break;
             case RUNNING: region = red_droid_running.getKeyFrame(state_timer, true); break;
             case FALLING: region = red_droid_falling.getKeyFrame(state_timer, true); break;
@@ -104,12 +111,12 @@ public class Red_Droid extends Sprite {
             default: region = red_droid_idle.getKeyFrame(state_timer, true);; break;
         }
 
-        if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !region.isFlipX()) {
+        if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !region.isFlipX()){
             region.flip(true, false);
             leftFalse_rightTrue = false;
         }
         else if ((box_2d_body.getLinearVelocity().x > 0 || leftFalse_rightTrue) && region.isFlipX()){
-            region.flip(false, false);
+            region.flip(true, false);
             leftFalse_rightTrue = true;
         }
 
@@ -119,7 +126,11 @@ public class Red_Droid extends Sprite {
     }
 
     public State getState(){
-        if((box_2d_body.getLinearVelocity().y > 0 && current_state == State.JUMPING)
+
+        if (red_droid_is_dead)
+            return State.DEAD;
+        
+        else if((box_2d_body.getLinearVelocity().y > 0 && current_state == State.JUMPING)
                 || (box_2d_body.getLinearVelocity().y < 0 && previous_state == State.JUMPING))
             return State.JUMPING;
 
@@ -133,7 +144,6 @@ public class Red_Droid extends Sprite {
 
     }
 
-
     public void jump(){
         if ( current_state != State.JUMPING && current_state != State.FALLING) {
             box_2d_body.applyLinearImpulse(new Vector2(0, 2.4f), box_2d_body.getWorldCenter(), true);
@@ -144,6 +154,14 @@ public class Red_Droid extends Sprite {
         else if (current_state == State.JUMPING && box_2d_body.getLinearVelocity().y > 0){
             box_2d_body.applyForce(new Vector2(0, 7.4f), box_2d_body.getWorldCenter(), true);
         }
+    }
+
+    public boolean isDead(){
+        return red_droid_is_dead;
+    }
+
+    public float getState_timer(){
+        return state_timer;
     }
 
     public void defineRedDroid(){
@@ -179,7 +197,11 @@ public class Red_Droid extends Sprite {
     }
 
     public void hit(){
-        sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_DAMAGE);
-        sound.play();
+        if(!red_droid_is_dead) {
+            red_droid_is_dead = true;
+            sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_DAMAGE);
+            sound.play();
+        }
+
     }
 }

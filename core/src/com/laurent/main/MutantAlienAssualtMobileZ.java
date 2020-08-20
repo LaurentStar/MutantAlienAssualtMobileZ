@@ -5,11 +5,9 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.laurent.main.Screens.PlayScreen;
 import com.laurent.main.Tools.MyAssetManager;
 
-import java.util.HashMap;
-
 public class MutantAlienAssualtMobileZ extends Game {
 
-	public static final int V_WIDTH = 400;
+	public static final int V_WIDTH = 100;//400;
     public static final int V_HEIGHT = 225;
     public static final float PPM = 100; //Pixels per meter
     public SpriteBatch batch;
@@ -24,7 +22,7 @@ public class MutantAlienAssualtMobileZ extends Game {
 	public static final short ENEMY_BIT = 64;
     public static final short ENEMY_HEAD_BIT = 128;
     public static final short ITEM_BIT = 256;
-	private static HashMap files;
+
 
 	@Override
 	public void create () {

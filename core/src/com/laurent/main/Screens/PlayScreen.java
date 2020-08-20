@@ -39,7 +39,6 @@ public class PlayScreen implements Screen {
     private Viewport game_port;
     private Hud hud;
     private Controller controller;
-    boolean flag = false;
     private TmxMapLoader map_loader;
     private TiledMap map;
     private OrthogonalTiledMapRenderer renderer;
@@ -54,7 +53,9 @@ public class PlayScreen implements Screen {
     public PlayScreen(MutantAlienAssualtMobileZ game){
         atlas = new TextureAtlas("all_characters_pack_one.pack");
         this.game = game;
-        game_cam = new OrthographicCamera();
+        game_cam = new OrthographicCamera(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
+                MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM );
+
         game_port = new StretchViewport(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
                 MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM,
                 game_cam);
@@ -110,15 +111,15 @@ public class PlayScreen implements Screen {
     }
 
     public void handleInput(float dt){
-
-        if (controller.isJumpPressed()) {
-            player.jump();
+        if(player.current_state != Red_Droid.State.DEAD) {
+            if (controller.isJumpPressed()) {
+                player.jump();
+            }
+            if (controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= 2)
+                player.box_2d_body.applyLinearImpulse(new Vector2(0.1f, 0), player.box_2d_body.getWorldCenter(), true);
+            else if (controller.isLeftPressed() && player.box_2d_body.getLinearVelocity().x >= -2)
+                player.box_2d_body.applyLinearImpulse(new Vector2(-0.1f, 0), player.box_2d_body.getWorldCenter(), true);
         }
-        if(controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= 2)
-            player.box_2d_body.applyLinearImpulse(new Vector2(0.1f, 0), player.box_2d_body.getWorldCenter(), true);
-        else if (controller.isLeftPressed()  && player.box_2d_body.getLinearVelocity().x >= -2)
-            player.box_2d_body.applyLinearImpulse(new Vector2(-0.1f, 0), player.box_2d_body.getWorldCenter(), true);
-
     }
 
     public void update(float dt){
@@ -173,6 +174,11 @@ public class PlayScreen implements Screen {
         game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
         hud.stage.draw();
         controller.draw();
+
+        if(gameOver()){
+            game.setScreen(new GameOverScreen(game));
+            dispose();
+        }
     }
 
     @Override
@@ -214,5 +220,12 @@ public class PlayScreen implements Screen {
         world.dispose();
         box_2d_debug_renderer.dispose();
         hud.dispose();
+    }
+
+    public boolean gameOver(){
+        if(player.current_state == Red_Droid.State.DEAD && player.getState_timer() > 3){
+            return true;
+        }
+        return false;
     }
 }
