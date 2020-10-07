@@ -35,7 +35,7 @@ public class Coin extends InteractiveTileObject {
             Hud.addScore(1000);
             if(object.getProperties().containsKey("globe")) {
                 screen.spawnItem(new ItemDefintion(
-                        new Vector2(body.getPosition().x, body.getPosition().y + 16 / MutantAlienAssualtMobileZ.PPM), Globe.class));
+                        new Vector2(body.getPosition().x, body.getPosition().y + 16), Globe.class));
 
             }
         }

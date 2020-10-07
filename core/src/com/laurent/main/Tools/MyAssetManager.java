@@ -7,6 +7,7 @@ import com.badlogic.gdx.audio.Sound;
 public class MyAssetManager {
     public final AssetManager manager = new AssetManager();
     public final String MUSIC_SAVING_THE_WORLD = "audio_music_saving_the_world_revamped.ogg";
+    public final String MUSIC_E_VS_S_TITLE = "audio_music_e_vs_s_title_music.ogg";
     public final String SOUND_SWIFT_MOVEMENT = "audio_fx_swift_movement.wav";
     public final String SOUND_JUMP = "audio_fx_jump.wav";
     public final String SOUND_METAL_CLICK = "audio_fx_metal_click.ogg";
@@ -16,6 +17,7 @@ public class MyAssetManager {
 
     public void loadMusic(){
         manager.load(MUSIC_SAVING_THE_WORLD, Music.class);
+        manager.load(MUSIC_E_VS_S_TITLE, Music.class);
     }
 
     public void loadSounds(){

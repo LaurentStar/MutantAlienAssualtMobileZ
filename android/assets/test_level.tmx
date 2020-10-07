@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="240" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="7" nextobjectid="190">
+<map version="1.2" tiledversion="1.3.4" orientation="orthogonal" renderorder="right-down" width="240" height="13" tilewidth="16" tileheight="16" infinite="0" nextlayerid="11" nextobjectid="205">
  <tileset firstgid="1" source="assualt_tile_map.tsx"/>
- <layer id="1" name="background" width="240" height="13" locked="1">
+ <layer id="1" name="background" width="240" height="13">
   <data encoding="base64" compression="zlib">
-   eJzt1tEKgjAUgGHzrUde9Zq9TERFaygscpwtv4sPp+ziTPnBZZ6mpSPpKXoO4Dtp1i+MSLswJt0CcDRnYFiXA0oVomcsXU/vaz7n6/7X53uJfk//oMV3IdZenbbuF/h0by3vrlznavaXa6C9rd7Kfmv2R58FeNjqF+hP3una/zPQr7V+o2cixg2BHwR6
+   eJzt1kEKgCAQQFH1bh1KctU1u0wERSYKSsqo/cUjCxdj8SFnlHIdsRfpOQCUsYZ+gRHRLjAmugUA/M0KYFjbD9kM0jOGdv1c/Tnv+6/Pa5F+TzNo8V0gq1anrfsFalv0m/Q8pc7W/O7CtS9nf7gGejZ6v7dUb2G/OfulzwLkmqXflFS/wAxm69fvNPb/DKBfsX6lZ4KMAwv3ASo=
   </data>
  </layer>
- <layer id="2" name="graphics" width="240" height="13" locked="1">
+ <objectgroup id="7" name="player" locked="1">
+  <object id="202" x="60" y="80" width="18" height="18.6667"/>
+ </objectgroup>
+ <layer id="2" name="graphics" width="240" height="13">
   <data encoding="base64" compression="zlib">
-   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
+   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
   </data>
  </layer>
  <objectgroup id="3" name="ground" locked="1">
@@ -82,9 +85,15 @@
   <object id="184" x="3232" y="112" width="64" height="16"/>
   <object id="185" x="720" y="0" width="176" height="16"/>
   <object id="186" x="720" y="16" width="16" height="96"/>
+  <object id="194" x="320" y="112" width="16" height="16"/>
+  <object id="195" x="576" y="112" width="16" height="16"/>
+  <object id="196" x="1040" y="176" width="16" height="16"/>
+  <object id="197" x="496" y="176" width="16" height="16"/>
+  <object id="198" x="816" y="80" width="16" height="32"/>
+  <object id="199" x="848" y="112" width="16" height="32"/>
  </objectgroup>
  <objectgroup id="4" name="platforms" locked="1"/>
- <objectgroup id="5" name="coins">
+ <objectgroup id="5" name="coins" locked="1">
   <object id="23" x="768" y="48" width="16" height="16"/>
   <object id="24" x="640" y="0" width="16" height="16"/>
   <object id="25" x="432" y="80" width="16" height="16">
@@ -92,7 +101,6 @@
     <property name="globe" value=""/>
    </properties>
   </object>
-  <object id="26" x="912" y="16" width="16" height="16"/>
   <object id="27" x="960" y="16" width="16" height="16"/>
   <object id="28" x="112" y="144" width="16" height="16"/>
   <object id="33" x="1232" y="80" width="16" height="16"/>
@@ -148,9 +156,6 @@
   <object id="189" x="3152" y="64" width="16" height="16"/>
  </objectgroup>
  <objectgroup id="6" name="green_ram" locked="1">
-  <object id="96" x="112" y="176" width="16" height="16"/>
-  <object id="97" x="160" y="176" width="16" height="16"/>
-  <object id="98" x="1408" y="160" width="16" height="16"/>
   <object id="99" x="1552" y="96" width="16" height="16"/>
   <object id="131" x="928" y="16" width="16" height="16"/>
   <object id="156" x="2832" y="32" width="16" height="16"/>
@@ -162,5 +167,14 @@
   <object id="162" x="2576" y="32" width="16" height="16"/>
   <object id="163" x="2592" y="16" width="16" height="16"/>
   <object id="164" x="2608" y="0" width="16" height="16"/>
+  <object id="190" x="352" y="112" width="16" height="16"/>
+  <object id="191" x="416" y="112" width="16" height="16"/>
+  <object id="192" x="480" y="112" width="16" height="16"/>
+  <object id="193" x="544" y="112" width="16" height="16"/>
+  <object id="200" x="1392" y="112" width="16" height="16"/>
+  <object id="201" x="624" y="144" width="48" height="48"/>
+ </objectgroup>
+ <objectgroup id="10" name="weapon_depot">
+  <object id="204" x="176" y="48" width="32" height="48"/>
  </objectgroup>
 </map>

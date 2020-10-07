@@ -1,25 +1,32 @@
 all_characters_pack_one.png
-size: 486, 21
+size: 486, 65
 format: RGBA8888
-filter: Linear,Linear
+filter: Nearest,Nearest
 repeat: none
 green_ram_gallope_20x21
   rotate: false
-  xy: 0, 0
+  xy: 60, 0
   size: 100, 21
   orig: 100, 21
   offset: 0, 0
   index: -1
+pistol_32x16
+  rotate: false
+  xy: 0, 21
+  size: 128, 16
+  orig: 128, 16
+  offset: 0, 0
+  index: -1
 red_droid_dead_20x21
   rotate: false
-  xy: 100, 0
+  xy: 0, 0
   size: 20, 21
   orig: 20, 21
   offset: 0, 0
   index: -1
 red_droid_fall_20x21
   rotate: false
-  xy: 120, 0
+  xy: 20, 0
   size: 40, 21
   orig: 40, 21
   offset: 0, 0
@@ -43,5 +50,12 @@ red_droid_run_21x20
   xy: 360, 0
   size: 126, 20
   orig: 126, 20
+  offset: 0, 0
+  index: -1
+weapon_depot_33x44
+  rotate: false
+  xy: 128, 21
+  size: 297, 44
+  orig: 297, 44
   offset: 0, 0
   index: -1

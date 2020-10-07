@@ -26,8 +26,7 @@ public class Globe extends Item {
 
         FixtureDef fdef = new FixtureDef();
         PolygonShape shape = new PolygonShape();
-        shape.setAsBox(13 / 2 / MutantAlienAssualtMobileZ.PPM,
-                13 / 2 / MutantAlienAssualtMobileZ.PPM);
+        shape.setAsBox(0.13f / 2, 0.13f / 2);
 
         fdef.filter.categoryBits = MutantAlienAssualtMobileZ.ITEM_BIT;
         fdef.filter.maskBits = MutantAlienAssualtMobileZ.DEFUALT_BIT |

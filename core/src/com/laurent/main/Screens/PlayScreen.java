@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.viewport.Viewport;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Scenes.Controller;
 import com.laurent.main.Scenes.Hud;
+import com.laurent.main.Sprites.BackGroundTrigger.WeaponDepot;
 import com.laurent.main.Sprites.Enemies.Enemy;
 import com.laurent.main.Sprites.Items.Globe;
 import com.laurent.main.Sprites.Items.Item;
@@ -25,6 +26,7 @@ import com.laurent.main.Sprites.Items.ItemDefintion;
 import com.laurent.main.Sprites.Red_Droid;
 import com.laurent.main.Tools.Box2dWorldcCreator;
 import com.laurent.main.Tools.MyAssetManager;
+import com.laurent.main.Tools.MyQueryCallback;
 import com.laurent.main.Tools.WorldContactListener;
 
 import java.util.concurrent.LinkedBlockingQueue;
@@ -42,7 +44,8 @@ public class PlayScreen implements Screen {
     private TmxMapLoader map_loader;
     private TiledMap map;
     private OrthogonalTiledMapRenderer renderer;
-
+    private int level_width;
+    private int level_height;
     private World world;
     private Box2DDebugRenderer box_2d_debug_renderer;
     private Box2dWorldcCreator creator;
@@ -53,23 +56,44 @@ public class PlayScreen implements Screen {
     public PlayScreen(MutantAlienAssualtMobileZ game){
         atlas = new TextureAtlas("all_characters_pack_one.pack");
         this.game = game;
-        game_cam = new OrthographicCamera(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
-                MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM );
 
-        game_port = new StretchViewport(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
-                MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM,
-                game_cam);
 
-        hud = new Hud(game.batch);
+
+        //[Old] Please remove after changes
+//        game_cam = new OrthographicCamera(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
+//                MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM );
+//
+//
+//
+//        game_port = new StretchViewport(MutantAlienAssualtMobileZ.V_WIDTH / MutantAlienAssualtMobileZ.PPM,
+//                MutantAlienAssualtMobileZ.V_HEIGHT / MutantAlienAssualtMobileZ.PPM,
+//                game_cam);
+
+        //[New] Fit the camera to the world not the world to the camera
+        game_cam = new OrthographicCamera(MutantAlienAssualtMobileZ.V_WIDTH, MutantAlienAssualtMobileZ.V_HEIGHT);
+        game_port = new StretchViewport(MutantAlienAssualtMobileZ.V_WIDTH, MutantAlienAssualtMobileZ.V_HEIGHT, game_cam);
+
+
+
         map_loader = new TmxMapLoader();
         map = map_loader.load("test_level.tmx");
-        renderer = new OrthogonalTiledMapRenderer(map, 1/MutantAlienAssualtMobileZ.PPM);
+
+        level_height = map.getProperties().get("height", Integer.class);
+        level_width = map.getProperties().get("width", Integer.class);
+        //[Old] Please remove after changes
+//        renderer = new OrthogonalTiledMapRenderer(map, 1/MutantAlienAssualtMobileZ.PPM);
+        //[New]
+        renderer = new OrthogonalTiledMapRenderer(map, 1/16f);
+
         game_cam.position.set(game_port.getWorldWidth()/2, game_port.getWorldHeight()/2, 0);
-        world = new World(new Vector2(0, -10), true);
+        world = new World(new Vector2(0, -30), true);
         box_2d_debug_renderer = new Box2DDebugRenderer();
 
-        controller = new Controller(game.batch);
+        hud = new Hud(game.batch);
 
+        MyQueryCallback myQueryCallback = new MyQueryCallback();
+
+        controller = new Controller(game.batch);
 
 
         ass_man = game.getMyAssetManager();
@@ -79,12 +103,14 @@ public class PlayScreen implements Screen {
 
 
         creator = new Box2dWorldcCreator(this);
-        player = new Red_Droid(this);
+        player = creator.getPlayer(); //new Red_Droid(this);
 
         world.setContactListener(new WorldContactListener());
 
         items = new Array<Item>();
         items_to_spawn = new LinkedBlockingQueue<ItemDefintion>();
+
+
     }
 
     public void spawnItem(ItemDefintion item_def){
@@ -115,10 +141,15 @@ public class PlayScreen implements Screen {
             if (controller.isJumpPressed()) {
                 player.jump();
             }
-            if (controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= 2)
-                player.box_2d_body.applyLinearImpulse(new Vector2(0.1f, 0), player.box_2d_body.getWorldCenter(), true);
-            else if (controller.isLeftPressed() && player.box_2d_body.getLinearVelocity().x >= -2)
-                player.box_2d_body.applyLinearImpulse(new Vector2(-0.1f, 0), player.box_2d_body.getWorldCenter(), true);
+
+
+            player.fireWeapon(controller.isFireWeaponPressed());
+
+
+            if (controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= MutantAlienAssualtMobileZ.MAX_INPUT_SPEED)
+                player.box_2d_body.applyLinearImpulse(new Vector2(0.6f, 0), player.box_2d_body.getWorldCenter(), true);
+            else if (controller.isLeftPressed() && player.box_2d_body.getLinearVelocity().x >= -MutantAlienAssualtMobileZ.MAX_INPUT_SPEED)
+                player.box_2d_body.applyLinearImpulse(new Vector2(-0.6f, 0), player.box_2d_body.getWorldCenter(), true);
         }
     }
 
@@ -128,12 +159,13 @@ public class PlayScreen implements Screen {
 
         world.step(1/60f, 6, 2);
 
+
         handleSpawningItems();
 
         player.update(dt);
         for (Enemy enemy : creator.getGreenRams()) {
             enemy.update(dt);
-            if (!enemy.isDestroyed() && enemy.getX() < player.getX() + 224 / MutantAlienAssualtMobileZ.PPM){
+            if (!enemy.isDestroyed() && enemy.getX() < player.getX() + MutantAlienAssualtMobileZ.V_WIDTH){
                 if(!world.isLocked() && !enemy.box_2d_body.isActive()) {
                     enemy.box_2d_body.setActive(true);
                 }
@@ -141,11 +173,14 @@ public class PlayScreen implements Screen {
         }
         for (Item item: items)
             item.update(dt);
+        for(WeaponDepot weapon_depot : creator.getWeaponDepots())
+            weapon_depot.update(dt);
 
         hud.update(dt);
 
         game_cam.position.x = player.box_2d_body.getPosition().x;
         game_cam.position.y = player.box_2d_body.getPosition().y;
+        keepCamInBound();
 
         game_cam.update();
         renderer.setView(game_cam);
@@ -160,15 +195,26 @@ public class PlayScreen implements Screen {
 
         box_2d_debug_renderer.render(world, game_cam.combined);
 
+
+
+
         game.batch.setProjectionMatrix(game_cam.combined);
 
         game.batch.begin();
-            player.draw(game.batch);
+            for(WeaponDepot weapon_depot : creator.getWeaponDepots()) {
+                weapon_depot.draw(game.batch);
+            }
+
             for (Enemy enemy : creator.getGreenRams())
                 enemy.draw(game.batch);
+
             for (Item item : items)
                 item.draw(game.batch);
+
+            player.draw(game.batch);
+
         game.batch.end();
+
 
 
         game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
@@ -183,9 +229,21 @@ public class PlayScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
+
         game_port.update(width, height);
+        //hud.resize(width, height);
         controller.resize(width, height);
+
     }
+
+    public int getLevelWidth(){
+        return level_width;
+    }
+
+    public int getLevelHeight(){
+        return level_height;
+    }
+
     public TiledMap getMap(){
         return map;
     }
@@ -196,6 +254,14 @@ public class PlayScreen implements Screen {
 
     public MyAssetManager getAssMan(){
         return  ass_man;
+    }
+
+    public void keepCamInBound(){
+        game_cam.position.x = (game_cam.position.x < 0) ? 0 : game_cam.position.x;
+        game_cam.position.x = (game_cam.position.x > level_width) ? level_width : game_cam.position.x;
+
+        game_cam.position.y = (game_cam.position.y < 0) ? 0 : game_cam.position.y;
+        game_cam.position.y = (game_cam.position.y > level_width) ? level_width : game_cam.position.y;
     }
 
     @Override

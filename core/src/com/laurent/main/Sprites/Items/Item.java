@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
-import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Screens.PlayScreen;
 import com.laurent.main.Sprites.Red_Droid;
 
@@ -21,7 +20,7 @@ public abstract class Item extends Sprite {
         this.screen = screen;
         this.world = screen.getWorld();
         setPosition(x, y);
-        setBounds(getX(), getY(), 16/ MutantAlienAssualtMobileZ.PPM, 16/MutantAlienAssualtMobileZ.PPM);
+        setBounds(getX(), getY(), 16, 16);
         to_destroy = false;
         destroyed = false;
         defineItem();
