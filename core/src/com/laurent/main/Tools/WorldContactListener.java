@@ -7,6 +7,7 @@ import com.badlogic.gdx.physics.box2d.Fixture;
 import com.badlogic.gdx.physics.box2d.Manifold;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Sprites.Enemies.Enemy;
+import com.laurent.main.Sprites.Items.Bullet;
 import com.laurent.main.Sprites.Red_Droid;
 import com.laurent.main.Sprites.TileObjects.InteractiveTileObject;
 
@@ -152,6 +153,12 @@ public class WorldContactListener implements ContactListener {
                             ((Red_Droid)fixA.getUserData()).hit();
                         else
                             ((Red_Droid)fixB.getUserData()).hit();
+                        break;
+                    case MutantAlienAssualtMobileZ.BULLET_BIT | MutantAlienAssualtMobileZ.ENEMY_BIT:
+                        if (fixA.getFilterData().categoryBits == MutantAlienAssualtMobileZ.ENEMY_BIT)
+                            ((Enemy)fixA.getUserData()).onHitDamage(((Bullet)fixB.getUserData()).hitDamage());
+                        else
+                            ((Enemy)fixB.getUserData()).onHitDamage(((Bullet)fixA.getUserData()).hitDamage());
                         break;
                     /*case MutantAlienAssualtMobileZ.RED_DROID_BIT | MutantAlienAssualtMobileZ.BACKGROUND_MACHINE_BIT:
                         //if the player fires presses the fire trigger while in contact with the machine

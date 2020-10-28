@@ -124,6 +124,7 @@ public class WeaponDepot extends BackGroundTrigger{
     public boolean getReadyToDisburse(){
         return ready_to_disburse;
     }
+
     @Override
     public void defineBackGroundObject(Rectangle rect){
 

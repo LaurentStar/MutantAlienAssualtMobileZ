@@ -6,7 +6,6 @@ import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Screens.PlayScreen;
-import com.laurent.main.Sprites.Red_Droid;
 
 public class Globe extends Item {
 
@@ -22,7 +21,7 @@ public class Globe extends Item {
         BodyDef body_def = new BodyDef();
         body_def.position.set(getX(), getY());
         body_def.type = BodyDef.BodyType.DynamicBody;
-        body = world.createBody(body_def);
+        box_2d_body = world.createBody(body_def);
 
         FixtureDef fdef = new FixtureDef();
         PolygonShape shape = new PolygonShape();
@@ -35,20 +34,20 @@ public class Globe extends Item {
                                 MutantAlienAssualtMobileZ.RED_DROID_BIT;
 
         fdef.shape = shape;
-        body.createFixture(fdef).setUserData(this);
+        box_2d_body.createFixture(fdef).setUserData(this);
 
     }
 
-    @Override
-    public void use(Red_Droid red_droid) {
-        destroy();
-    }
+   // @Override
+    //public void use(Red_Droid red_droid) {
+    //    destroy();
+    //}
 
     @Override
     public void update(float dt) {
         super.update(dt);
-        setPosition(body.getPosition().x - getWidth()/2, body.getPosition().y - getHeight()/2);
-        velocity.y = body.getLinearVelocity().y;
-        body.setLinearVelocity(velocity);
+        setPosition(box_2d_body.getPosition().x - getWidth()/2, box_2d_body.getPosition().y - getHeight()/2);
+        velocity.y = box_2d_body.getLinearVelocity().y;
+        box_2d_body.setLinearVelocity(velocity);
     }
 }

@@ -9,7 +9,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
-import com.badlogic.gdx.physics.box2d.CircleShape;
 import com.badlogic.gdx.physics.box2d.EdgeShape;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
@@ -33,7 +32,7 @@ public class Red_Droid extends Sprite {
     public WeaponState previous_weapon_state;
 
     public enum Weapon {
-        UNARMED, PISTOL, ASSAULT_RIFLE;
+        UNARMED, PISTOL, ASSAULT_RIFLE, SHOT_GUN;
 
         private static final Weapon[] VALUES = values();
         private static final int SIZE = VALUES.length;
@@ -44,24 +43,24 @@ public class Red_Droid extends Sprite {
     }
     private Weapon weapon;
 
-    private Map<Weapon, Map<WeaponState, Animation<TextureRegion>>> LUT_weapon_animation;
-    private Map<Weapon, Map<WeaponState, TextureRegion>> LUT_weapon_frame;
     public World world;
     public Body box_2d_body;
     private PlayScreen screen;
     private Sound sound;
 
+    private Array<Vector2> bullet_start_positions;
+    private Array<Vector2> bullet_velocities;
+
     private TextureRegion render_red_droid;
     private TextureRegion render_weapon;
+    private Animation<TextureRegion> weapon_animation;
 
-    private TextureRegion red_droid_dead;
-    private Animation<TextureRegion> red_droid_idle;
-    private Animation<TextureRegion> red_droid_running;
-    private Animation<TextureRegion> red_droid_jumping;
-    private Animation<TextureRegion> red_droid_falling;
+    // This map encapsulate the animations for less code
+    private Map<String, Animation<TextureRegion>> animation_table_player;
+    private Map<String, Animation<TextureRegion>> animation_table_weapon;
 
-    private TextureRegion pistol_idle;
-    private Animation<TextureRegion> pistol_fire;
+    //This is a 2 variable look up table for fast searches of animation
+    private Map<Weapon, Map<WeaponState, Animation<TextureRegion>>> V2LUT_weapon_animation;
 
     private Sprite weapon_sprite = new Sprite();
 
@@ -74,87 +73,52 @@ public class Red_Droid extends Sprite {
     private float weapon_state_timer;
     private float weapon_position_x;
     private float weapon_position_y;
-    int position_x;
-    int position_y;
+    private float android_position_w;
+    private float android_position_h;
+
+    private int android_position_x;
+    private int android_position_y;
     private int ammo;
     private int rate_of_fire;
 
     public Red_Droid(PlayScreen screen, int x, int y){
-        //super (screen.getAtlas().findRegion("red_droid_idle_20x21"));
         this.world = screen.getWorld();
         this.screen = screen;
-        this.position_x = x;
-        this.position_y = y;
+        this.android_position_x = x;
+        this.android_position_y = y;
 
-        weapon = Weapon.PISTOL;
+        //Enumns
+        weapon = Weapon.ASSAULT_RIFLE;
         current_state = State.IDLE;
-        previous_state = State.IDLE;
+        previous_state = State.IDLE;this.android_position_w = 0.9f;
         current_weapon_state = WeaponState.IDLE;
         previous_weapon_state = WeaponState.IDLE;
+
+        //Floats
         state_timer = 0;
         weapon_state_timer = 0;
+        android_position_w = 0.9f;
+        android_position_h = 0.9f;
+
+        //Ints
         ammo = 0;
         rate_of_fire = 1;
 
+        //Boolean
         leftFalse_rightTrue = true;
         red_droid_is_dead = false;
         fire_weapon = false;
-
-        Array<TextureRegion> frames = new Array<TextureRegion>();
-
         status_flags = new boolean[MutantAlienAssualtMobileZ.Status.size];
         status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] = true;
 
-        //////////////////////
-        // Red Droid Assets //
-        //////////////////////
+        // Misc
+        animation_table_player = new HashMap<String, Animation<TextureRegion>>();
+        animation_table_weapon = new HashMap<String, Animation<TextureRegion>>();
 
-        // Idle Animation
-        for (int e=0; e<1; e++)
-            for (int i=0; i<5; i++)
-                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i*20, 0, 20, 21));
-            //Get frames in reverse
-            for (int i=4; i>=0; i--)
-                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i*20, 0, 20, 21));
-        red_droid_idle = new Animation(0.25f, frames);
-        frames.clear();
-
-
-        // Running Animation
-        for (int i=0; i<6; i++)
-            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_run_21x20"), i*21, 0, 21, 20));
-        red_droid_running = new Animation(0.1f, frames);
-        frames.clear();
-
-
-        // Jumping Animation
-        for (int i=1; i<5; i++)
-            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_jump_20x21"), i*20, 0, 20, 21));
-        red_droid_jumping = new Animation(0.1f, frames);
-        frames.clear();
-
-        // Falling Animation
-        for (int i=1; i<2; i++)
-            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_fall_20x21"), i*20, 0, 20, 21));
-        red_droid_falling = new Animation(0.1f, frames);
-        frames.clear();
-
-        //Dead
-        red_droid_dead = new TextureRegion(screen.getAtlas().findRegion("red_droid_dead_20x21"), 0, 0, 20, 21);
-
-        defineRedDroid();
-        setBounds(0, 0, 1, 1);
-        render_red_droid = red_droid_idle.getKeyFrame(state_timer, true);
-        setRegion(render_red_droid);
-
-
-        ////////////////////
-        // Weapons Assets //
-        ////////////////////
-        defineWeaponLUT();
-        pistol_idle = new TextureRegion(screen.getAtlas().findRegion("pistol_32x16"), 0, 0, 32, 16);
-        weapon_sprite.setBounds(0, 0, 2, 1);
-        render_weapon = pistol_idle;
+        initBox2D();
+        initRedDroidTextureRegions();
+        initWeaponTextureRegions();
+        initWeaponV2LUT();
     }
 
     public void update(float dt){
@@ -184,12 +148,12 @@ public class Red_Droid extends Sprite {
 
         //TextureRegion region;
         switch(current_state){
-            case DEAD: render_red_droid = red_droid_dead; break;
-            case JUMPING: render_red_droid=  red_droid_jumping.getKeyFrame(state_timer); break;
-            case RUNNING: render_red_droid = red_droid_running.getKeyFrame(state_timer, true); break;
-            case FALLING: render_red_droid = red_droid_falling.getKeyFrame(state_timer, true); break;
+            case DEAD: render_red_droid = animation_table_player.get("red_droid_dead").getKeyFrame(state_timer); break;
+            case JUMPING: render_red_droid = animation_table_player.get("red_droid_jumping").getKeyFrame(state_timer); break;
+            case RUNNING: render_red_droid = animation_table_player.get("red_droid_running").getKeyFrame(state_timer, true); break;
+            case FALLING: render_red_droid = animation_table_player.get("red_droid_falling").getKeyFrame(state_timer, true); break;
             case IDLE:
-            default: render_red_droid = red_droid_idle.getKeyFrame(state_timer, true);; break;
+            default: render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(state_timer, true); break;
         }
 
         if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !render_red_droid.isFlipX()){
@@ -225,59 +189,31 @@ public class Red_Droid extends Sprite {
     }
 
     public void weaponUpdate(float dt){
-        positionWeapon();
+        configWeaponPosition();
         setWeaponFrame(dt);
-    }
-
-    public void positionWeapon(){
-        /*  The weapon relative positioning depends on the weapon. This method selectively positions the weapon
-            in my units based on the weapon class
-        */
-        switch(weapon){
-            case UNARMED:   weapon_position_x = box_2d_body.getPosition().x;
-                            weapon_position_y = box_2d_body.getPosition().y;
-                            break;
-
-            case PISTOL:    weapon_position_x = box_2d_body.getPosition().x;
-                            weapon_position_y = box_2d_body.getPosition().y;
-                            break;
-
-            case ASSAULT_RIFLE:
-                            weapon_position_x = box_2d_body.getPosition().x;
-                            weapon_position_y = box_2d_body.getPosition().y;
-                            break;
-        }
-
-        weapon_sprite.setPosition(weapon_position_x, weapon_position_y);
     }
 
     public void setWeaponFrame(float dt){
         current_weapon_state = getWeaponState();
 
         switch(current_weapon_state){
-            //////////////////////////////
-            //Single frames no animation//
-            //////////////////////////////
-            case IDLE: break;
-
             ///////////////////////////////////////////////
-            //Looping animations look up 2 variable table//
+            //looping animations look up 2 variable table//
             ///////////////////////////////////////////////
             case FIRE:
-                /* render_weapon = LUT_weapon_animation
+                weapon_animation = V2LUT_weapon_animation
                         .get(weapon)
-                        .get(current_weapon_state)
-                        .getKeyFrame(state_timer, true);*/
+                        .get(current_weapon_state);
+                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer, true);
                 break;
-
             ///////////////////////////////////////////////////
             //Non looping animations look up 2 variable table//
             ///////////////////////////////////////////////////
             default:
-                render_weapon = LUT_weapon_animation
+                weapon_animation = V2LUT_weapon_animation
                         .get(weapon)
-                        .get(current_weapon_state)
-                        .getKeyFrame(state_timer);
+                        .get(current_weapon_state);
+                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer);
                 break;
         }
 
@@ -297,14 +233,22 @@ public class Red_Droid extends Sprite {
 
     public WeaponState getWeaponState(){
 
-        if (red_droid_is_dead)
+        if((!fire_weapon) && (weapon_animation.isAnimationFinished(weapon_state_timer)))
             return WeaponState.IDLE;
-        else if (fire_weapon)
+        else  if((!fire_weapon) && (!weapon_animation.isAnimationFinished(weapon_state_timer))) {
+            return current_weapon_state;
+        }
+        else if ((fire_weapon) && (current_weapon_state == previous_weapon_state))
             return WeaponState.FIRE;
-        else
-            return WeaponState.IDLE;
+
+
+        return previous_weapon_state;
     }
 
+
+    //-----------------//
+    // Actions Methods // Methods that perform actions/verbs in games
+    //-----------------//
     public void jump(){
         /*if ( current_state != State.JUMPING && current_state != State.FALLING) {
             box_2d_body.applyLinearImpulse(new Vector2(0, 9f), box_2d_body.getWorldCenter(), true);
@@ -345,7 +289,67 @@ public class Red_Droid extends Sprite {
         }
     }
 
-    public void dispenseWeaponFromDepot(){ weapon = Weapon.getRandomWeapon(); }
+    public void fireWeapon(boolean fire_weapon){
+        this.fire_weapon = fire_weapon;
+        ammo-= rate_of_fire;
+    }
+
+    public void dispenseWeaponFromDepot(){
+        weapon = Weapon.getRandomWeapon();
+        configWeaponBounds();
+    }
+
+    //--------------------------------//
+    // Run Time Configuration Methods // Mostly used to configure the weapon when it changes during run time
+    //--------------------------------//
+    private void configWeaponBounds(){
+        /* This method set the correct configurations for displaying a weapon when it changes
+         * during run time. This method is called whenever the weapon is changed which so far
+         * only happens in dispenseWeaponFromDepot(). It is also called during initialization
+         */
+
+        switch(weapon) {
+            case UNARMED: weapon_sprite.setBounds(0, 0, 0.1f, 0.1f); break;
+            case PISTOL:  weapon_sprite.setBounds(0, 0, 2f, 1f); break;
+            case ASSAULT_RIFLE: case SHOT_GUN:
+                          weapon_sprite.setBounds(0, 0, 4f, 1f); break;
+        }
+    }
+    private void configWeaponPosition(){
+        /* This method position the weapon relative to the player position. It has this configuration for
+         * each weapon because the weapons have different sizes.
+         */
+
+        switch(weapon){
+            case UNARMED:
+                    weapon_position_x = box_2d_body.getPosition().x;
+                    weapon_position_y = box_2d_body.getPosition().y;
+                break;
+
+            case PISTOL:
+                    weapon_position_x  = leftFalse_rightTrue
+                            ? box_2d_body.getPosition().x + (android_position_w * 25 / 100)
+                            : box_2d_body.getPosition().x - (android_position_w * 250 / 100);
+                    weapon_position_y = box_2d_body.getPosition().y - (android_position_h * 50 / 100);
+                break;
+
+            case ASSAULT_RIFLE:
+                    weapon_position_x = leftFalse_rightTrue
+                            ? box_2d_body.getPosition().x - (android_position_w * 60 / 100)
+                            : box_2d_body.getPosition().x - (android_position_w * 375 / 100);
+                    weapon_position_y = box_2d_body.getPosition().y - (android_position_h * 70 / 100);
+                break;
+
+            case SHOT_GUN:
+                    weapon_position_x = leftFalse_rightTrue
+                            ? box_2d_body.getPosition().x - (android_position_w * 70 / 100)
+                            : box_2d_body.getPosition().x - (android_position_w * 385 / 100);
+                    weapon_position_y = box_2d_body.getPosition().y - (android_position_h * 70 / 100);
+                break;
+        }
+
+        weapon_sprite.setPosition(weapon_position_x, weapon_position_y);
+    }
 
     public boolean isDead(){
         return red_droid_is_dead;
@@ -357,99 +361,227 @@ public class Red_Droid extends Sprite {
 
     public boolean isFire_weapon(){ return fire_weapon; }
 
-    public void defineRedDroid(){
-        BodyDef body_def = new BodyDef();
-        body_def.position.set(position_x, position_y);
+    //------------------------//
+    // Initialization Methods // These methods are only called in the constructor
+    //------------------------//
+    private void initBox2D(){
+        /* This method create a bod2d object and inserts it into the world. It also creates additional
+         * components of the player such as the feet used to detect collision with the ground.
+         * */
 
+        //-------------//
+        // Declaration //
+        //-------------//
+        BodyDef body_def = new BodyDef();
+        FixtureDef fdef = new FixtureDef();
+        PolygonShape shape = new PolygonShape();
+        EdgeShape feet = new EdgeShape();
+
+        //------------------------------//
+        // Create new body in the world //
+        //------------------------------//
+        body_def.position.set(android_position_x, android_position_y);
         body_def.type = BodyDef.BodyType.DynamicBody;
         box_2d_body = world.createBody(body_def);
 
-        FixtureDef fdef = new FixtureDef();
-        PolygonShape shape = new PolygonShape();
-        shape.setAsBox((0.9f/2), (0.9f/2) );
-
-
-
-        // Player Body
+        //----------------------------------------------//
+        // Define player fixture definition & collision //
+        //----------------------------------------------//
+        shape.setAsBox((android_position_w/2), (android_position_h/2));
         fdef.filter.categoryBits = MutantAlienAssualtMobileZ.RED_DROID_BIT;
         fdef.filter.maskBits = MutantAlienAssualtMobileZ.DEFUALT_BIT |
                 MutantAlienAssualtMobileZ.COIN_BIT |
                 MutantAlienAssualtMobileZ.ENEMY_BIT |
                 MutantAlienAssualtMobileZ.ITEM_BIT;
-
         fdef.shape = shape;
         box_2d_body.createFixture(fdef).setUserData(this);
 
-
-        // Player feet sensor
-        EdgeShape feet = new EdgeShape();
+        //--------------------//
+        // Define player feet //
+        //--------------------//
         feet.set(new Vector2(-0.43f, -0.5f), new Vector2(0.43f, -0.5f));
         fdef.shape = feet;
-        //fdef.isSensor = true;
         fdef.friction = 0.3f;
         fdef.density = 0f;
-
+        //fdef.isSensor = true;
         AbstractMap.SimpleEntry<String, Red_Droid> pair = new AbstractMap.SimpleEntry("player_bottom", this);
         box_2d_body.createFixture(fdef).setUserData(pair);
-
-
-        // Gun Placement (Likely to move)/
-
-        CircleShape gun_point = new CircleShape();
-        gun_point.setRadius(0.10f);
-        fdef.shape = gun_point;
-        fdef.isSensor = true;
-        fdef.friction = 0.3f;
-        fdef.density = 0f;
-        fdef.filter.categoryBits = MutantAlienAssualtMobileZ.NOTHING_BIT;
-        box_2d_body.createFixture(fdef).setUserData(this);
     }
+    private void initRedDroidTextureRegions() {
+        /* This method initialization the texture regions used to render the player's droid. The texture regions are stored
+         * in a hash map and are accessible by string name of the animations. It also initialization variables of the class
+         * sprites with default values upon starting the game */
 
-    protected void defineAnimationFrame(){
+        //-------------//
+        // Declaration //
+        //-------------//
+        Array<TextureRegion> frames = new Array<TextureRegion>();
 
+        //-------------------------------//
+        // Adding Texture Regions to Map //
+        //-------------------------------//
+        // ---- Idle Animation----/
+        for (int e = 0; e < 1; e++)
+            for (int i = 0; i < 5; i++)
+                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i * 20, 0, 20, 21));
+        for (int i = 4; i >= 0; i--) //Get frames in reverse
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i * 20, 0, 20, 21));
+        animation_table_player.put("red_droid_idle",  new Animation(0.25f, frames));
+        frames.clear();
+
+        // ----Running Animation---- //
+        for (int i = 0; i < 6; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_run_21x21"), i * 21, 0, 21, 21));
+        animation_table_player.put("red_droid_running", new Animation(0.1f, frames));
+        frames.clear();
+
+        // ----Jumping Animation---- //
+        for (int i = 1; i < 5; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_jump_20x21"), i * 20, 0, 20, 21));
+        animation_table_player.put("red_droid_jumping", new Animation(0.1f, frames));
+        frames.clear();
+
+        // ----Falling Animation---- //
+        for (int i = 1; i < 2; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_fall_20x21"), i * 20, 0, 20, 21));
+        animation_table_player.put("red_droid_falling", new Animation(0.1f, frames));
+        frames.clear();
+
+        // ----Dead---- //
+        frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_dead_20x21"), 0, 0, 20, 21));
+        animation_table_player.put("red_droid_dead", new Animation(0.1f, frames));
+        frames.clear();
+
+        //----------------//
+        // Initialization //
+        //----------------//
+        // The size to render the sprites. 1 meter high, 1 meter wide in ~my units
+        setBounds(0, 0, 1, 1);
+        render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(state_timer, true);
+        setRegion(render_red_droid);
+
+        /*/ Idle Animation
+        for (int e = 0; e < 1; e++)
+            for (int i = 0; i < 5; i++)
+                frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i * 20, 0, 20, 21));
+        //Get frames in reverse
+        for (int i = 4; i >= 0; i--)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_idle_20x21"), i * 20, 0, 20, 21));
+        red_droid_idle = new Animation(0.25f, frames);
+        frames.clear();
+
+        // Running Animation
+        for (int i = 0; i < 6; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("red_droid_run_21x21"), i * 21, 0, 21, 21));
+        red_droid_running = new Animation(0.1f, frames);
+        frames.clear();
+        red_droid_dead = new TextureRegion(screen.getAtlas().findRegion("red_droid_dead_20x21"), 0, 0, 20, 21);*/
     }
+    private void initWeaponTextureRegions(){
+        /* This method initialization the texture regions used to render the player's weapon. The texture regions are stored
+         * in a hash map and are accessible by string name of the animations. It also initialization variables of the class
+         * sprites with default values upon starting the game */
 
-    protected void defineWeaponLUT(){
-        /* This method defines the look up table for rendering the weapons animations/frames.
-           Called inn constructor onces. All animations and frames will be easily quiered with
-           the lookup table.
+        //-------------//
+        // Declaration //
+        //-------------//
+        Array<TextureRegion> frames = new Array<TextureRegion>();
+
+        //-------------------------------//
+        // Adding Texture Regions to Map //
+        //-------------------------------//
+        //---unarmed---//
+        frames.add(new TextureRegion(screen.getAtlas().findRegion("pistol_32x16"), 0, 0, 1, 1));
+        animation_table_weapon.put("unarmed", new Animation(0.0000001f, frames));
+        frames.clear();
+
+        //---pistol idle---//
+        frames.add(new TextureRegion(screen.getAtlas().findRegion("pistol_32x16"), 0, 0, 32, 16));
+        animation_table_weapon.put("pistol_idle", new Animation(0.0000001f, frames));
+        frames.clear();
+
+        //---pistol fire---//
+        for (int i=0; i<4; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("pistol_32x16"), i*32, 0, 32, 16));
+        animation_table_weapon.put("pistol_fire", new Animation(0.1f, frames));
+        frames.clear();
+
+        //---assault rifle idle---//
+        frames.add(new TextureRegion(screen.getAtlas().findRegion("assualt_rifle_64x16"), 0, 0, 64, 16));
+        animation_table_weapon.put("assualt_rifle_idle", new Animation(0.0000001f, frames));
+        frames.clear();
+
+        //---assault rifle fire---//
+        for (int i=0; i<5; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("assualt_rifle_64x16"), i*64, 0, 64, 16));
+        animation_table_weapon.put("assualt_rifle_fire", new Animation(0.02f, frames));
+        frames.clear();
+
+        //---shot gun idle---//
+        frames.add(new TextureRegion(screen.getAtlas().findRegion("shot_gun_64x16"), 0, 0, 64, 16));
+        animation_table_weapon.put("shot_gun_idle", new Animation(0.0000001f, frames));
+        frames.clear();
+
+        //---shot gun fire---//
+        for (int i=0; i<5; i++)
+            frames.add(new TextureRegion(screen.getAtlas().findRegion("shot_gun_64x16"), i*64, 0, 64, 16));
+        animation_table_weapon.put("shot_gun_fire", new Animation(0.08f, frames));
+        frames.clear();
+
+        //----------------//
+        // Initialization //
+        //----------------//
+        configWeaponBounds();
+        render_weapon = animation_table_weapon.get("unarmed").getKeyFrame(0, true);
+        weapon_animation = animation_table_weapon.get("unarmed");
+        weapon_sprite.setRegion(render_weapon);
+    }
+    private void initWeaponV2LUT(){
+        /* This method initializes a two variable look up table for texture regions related to the weapon. This
+         * is to make it easy to query the correct animation with the weapon currently equiped and the state/frame
+         * it is displaying. This an automatic process.
         */
 
-        //-----------//
-        // Frame LUT //
-        //-----------//
-        LUT_weapon_frame = new HashMap<Weapon, Map<WeaponState, TextureRegion>>();
+        //-------------//
+        // Declaration //
+        //-------------//
+        V2LUT_weapon_animation = new HashMap<Weapon, Map<WeaponState, Animation<TextureRegion>>>();
+        HashMap<WeaponState, Animation<TextureRegion>>  unarmed_table = new HashMap<WeaponState, Animation<TextureRegion>>();
+        HashMap<WeaponState, Animation<TextureRegion>>  pistol_table = new HashMap<WeaponState, Animation<TextureRegion>>();
+        HashMap<WeaponState, Animation<TextureRegion>>  assualt_rifle_table = new HashMap<WeaponState, Animation<TextureRegion>>();
+        HashMap<WeaponState, Animation<TextureRegion>>  shot_gun_table = new HashMap<WeaponState, Animation<TextureRegion>>();
 
-        //pistol//
-        HashMap<WeaponState, TextureRegion>  pistol_frame = new HashMap<WeaponState, TextureRegion>();
-        pistol_frame.put(WeaponState.IDLE, pistol_idle);
+        //-----------------------------------//
+        // Adding texture regions to the LUT //
+        //-----------------------------------//
+        //---unarmed---//
+        unarmed_table.put(WeaponState.IDLE, animation_table_weapon.get("unarmed"));
+        unarmed_table.put(WeaponState.FIRE, animation_table_weapon.get("unarmed"));
+        unarmed_table.put(WeaponState.RELOAD, animation_table_weapon.get("unarmed"));
+        unarmed_table.put(WeaponState.VIRTUAL_FIRE, animation_table_weapon.get("unarmed"));
+        unarmed_table.put(WeaponState.VIRTUAL_IDLE, animation_table_weapon.get("unarmed"));
+        unarmed_table.put(WeaponState.VIRTUAL_RELOAD, animation_table_weapon.get("unarmed"));
 
+        //---pistol---//
+        pistol_table.put(WeaponState.FIRE, animation_table_weapon.get("pistol_fire"));
+        pistol_table.put(WeaponState.IDLE, animation_table_weapon.get("pistol_idle"));
 
+        //---assualt rifle---//
+        assualt_rifle_table.put(WeaponState.FIRE, animation_table_weapon.get("assualt_rifle_fire"));
+        assualt_rifle_table.put(WeaponState.IDLE, animation_table_weapon.get("assualt_rifle_idle"));
 
-        //------------------------//
-        // Animated animation LUT //
-        //------------------------//
-        LUT_weapon_animation = new HashMap<Weapon, Map<WeaponState, Animation<TextureRegion>>>();
-
-        //pistol//
-        HashMap<WeaponState, Animation<TextureRegion>>  pistol_animate = new HashMap<WeaponState, Animation<TextureRegion>>();
-        pistol_animate.put(WeaponState.FIRE, pistol_fire);
-
-
-
-        //------------------------//
-        // Build Weapon Frame LUT //
-        //------------------------//
-        LUT_weapon_frame.put(Weapon.UNARMED, pistol_frame); // [!!!!TESTING!!!!]
-
-
+        //---shot gun---//
+        shot_gun_table.put(WeaponState.FIRE, animation_table_weapon.get("shot_gun_fire"));
+        shot_gun_table.put(WeaponState.IDLE, animation_table_weapon.get("shot_gun_idle"));
 
         //----------------------------//
         // Build Weapon Animation LUT //
         //----------------------------//
-        LUT_weapon_animation.put(Weapon.PISTOL, pistol_animate);
+        V2LUT_weapon_animation.put(Weapon.SHOT_GUN, shot_gun_table);
+        V2LUT_weapon_animation.put(Weapon.PISTOL, pistol_table);
+        V2LUT_weapon_animation.put(Weapon.ASSAULT_RIFLE, assualt_rifle_table);
+        V2LUT_weapon_animation.put(Weapon.UNARMED, unarmed_table);
     }
-
 
     public void setStatusFlag(MutantAlienAssualtMobileZ.Status flag, boolean value){
         Gdx.app.log("red_droid", Float.toString(flag.value));
@@ -457,11 +589,6 @@ public class Red_Droid extends Sprite {
             case MIDAIR: status_flags[flag.value] = value;
                 break;
         }
-    }
-
-    public void fireWeapon(boolean fire_weapon){
-        this.fire_weapon = fire_weapon;
-        ammo-= rate_of_fire;
     }
 
     public void outOfBounds(){
@@ -481,14 +608,14 @@ public class Red_Droid extends Sprite {
                 break;
 
             case PISTOL:
-                //setRegion(render_gun);
-                //super.draw(batch);
+                weapon_sprite.setRegion(render_weapon);
+                weapon_sprite.draw(batch);
 
-               // setRegion(render_red_droid);
-                //super.draw(batch);
-               // break;
+                setRegion(render_red_droid);
+                super.draw(batch);
+                break;
 
-            case ASSAULT_RIFLE:
+            case ASSAULT_RIFLE: case SHOT_GUN:
                 setRegion(render_red_droid);
                 super.draw(batch);
 

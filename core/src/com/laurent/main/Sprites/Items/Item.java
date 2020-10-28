@@ -2,19 +2,23 @@ package com.laurent.main.Sprites.Items;
 
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import com.laurent.main.Screens.PlayScreen;
-import com.laurent.main.Sprites.Red_Droid;
 
 public abstract class Item extends Sprite {
     protected PlayScreen screen;
     protected World world;
     protected Vector2 velocity;
+    protected Body box_2d_body;
+    protected TextureRegion render_item;
     protected boolean to_destroy;
     protected boolean destroyed;
-    protected Body body;
+    protected float x_position;
+    protected float y_position;
+
 
     public Item(PlayScreen screen, float x, float y){
         this.screen = screen;
@@ -27,12 +31,12 @@ public abstract class Item extends Sprite {
     }
 
     public abstract void defineItem();
-    public abstract void use(Red_Droid red_droid);
+    //public abstract void use(Red_Droid red_droid);
 
 
     public void update(float dt){
         if(to_destroy && !destroyed){
-            world.destroyBody(body);
+            world.destroyBody(box_2d_body);
             destroyed = true;
         }
     }

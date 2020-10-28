@@ -163,8 +163,10 @@ public class GreenRam extends Enemy {
     }
 
     @Override
-    public void hitOnHead() {
-        set_to_destroy = true;
+    public void onHitDamage(int damage) {
+        health -= damage;
+        if(health==0)
+            set_to_destroy = true;
         sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_METAL_CLICK);
         sound.play();
     }

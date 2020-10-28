@@ -22,7 +22,7 @@ public abstract class Enemy extends Sprite{
     public Body box_2d_body;
     public Vector2 velocity;
 
-
+    protected int health;
 
 
     Enemy(PlayScreen screen, float x, float y){
@@ -38,7 +38,7 @@ public abstract class Enemy extends Sprite{
     protected abstract void defineEnemy();
     public abstract void update(float dt);
     public abstract State getState();
-    public abstract void hitOnHead();
+    public abstract void onHitDamage(int damage);
     public abstract boolean isDestroyed();
     public abstract TextureRegion getFrame(float dt);
     public void setStatusFlag(MutantAlienAssualtMobileZ.Status flag, boolean value){

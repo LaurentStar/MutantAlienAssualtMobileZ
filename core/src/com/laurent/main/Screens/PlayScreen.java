@@ -51,6 +51,7 @@ public class PlayScreen implements Screen {
     private Box2dWorldcCreator creator;
     private TextureAtlas atlas;
     private Array<Item> items;
+    private Array<Item> bullets;
     private LinkedBlockingQueue<ItemDefintion> items_to_spawn;
 
     public PlayScreen(MutantAlienAssualtMobileZ game){
@@ -110,7 +111,7 @@ public class PlayScreen implements Screen {
         items = new Array<Item>();
         items_to_spawn = new LinkedBlockingQueue<ItemDefintion>();
 
-
+        bullets = new Array<Item>();
     }
 
     public void spawnItem(ItemDefintion item_def){

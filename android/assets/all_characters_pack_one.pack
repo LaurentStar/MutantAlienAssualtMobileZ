@@ -1,8 +1,15 @@
 all_characters_pack_one.png
-size: 486, 65
+size: 512, 97
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
+assualt_rifle_64x16
+  rotate: false
+  xy: 0, 65
+  size: 320, 16
+  orig: 320, 16
+  offset: 0, 0
+  index: -1
 green_ram_gallope_20x21
   rotate: false
   xy: 60, 0
@@ -45,11 +52,18 @@ red_droid_jump_20x21
   orig: 100, 21
   offset: 0, 0
   index: -1
-red_droid_run_21x20
+red_droid_run_21x21
   rotate: false
   xy: 360, 0
-  size: 126, 20
-  orig: 126, 20
+  size: 126, 21
+  orig: 126, 21
+  offset: 0, 0
+  index: -1
+shot_gun_64x16
+  rotate: false
+  xy: 0, 81
+  size: 512, 16
+  orig: 512, 16
   offset: 0, 0
   index: -1
 weapon_depot_33x44
