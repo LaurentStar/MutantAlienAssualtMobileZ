@@ -16,6 +16,7 @@ import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Screens.PlayScreen;
+import com.laurent.main.Sprites.Items.Bullet;
 
 import java.util.AbstractMap;
 import java.util.HashMap;
@@ -23,13 +24,13 @@ import java.util.Map;
 import java.util.Random;
 
 public class Red_Droid extends Sprite {
-    public enum State {FALLING, JUMPING, RUNNING, IDLE, DEAD};
-    public State current_state;
-    public State previous_state;
+    public enum AnimationState {FALLING, JUMPING, RUNNING, IDLE, DEAD};
+    public AnimationState current_state;
+    public AnimationState previous_state;
 
-    public enum WeaponState {IDLE, FIRE, RELOAD, VIRTUAL_IDLE, VIRTUAL_FIRE, VIRTUAL_RELOAD};
-    public WeaponState current_weapon_state;
-    public WeaponState previous_weapon_state;
+    private enum WeaponState {IDLE, FIRE, RELOAD, VIRTUAL_IDLE, VIRTUAL_FIRE, VIRTUAL_RELOAD};
+    private WeaponState current_weapon_state;
+    private WeaponState previous_weapon_state;
 
     public enum Weapon {
         UNARMED, PISTOL, ASSAULT_RIFLE, SHOT_GUN;
@@ -47,6 +48,8 @@ public class Red_Droid extends Sprite {
     public Body box_2d_body;
     private PlayScreen screen;
     private Sound sound;
+    private Random random;
+    private Sprite weapon_sprite;
 
     private Array<Vector2> bullet_start_positions;
     private Array<Vector2> bullet_velocities;
@@ -62,24 +65,26 @@ public class Red_Droid extends Sprite {
     //This is a 2 variable look up table for fast searches of animation
     private Map<Weapon, Map<WeaponState, Animation<TextureRegion>>> V2LUT_weapon_animation;
 
-    private Sprite weapon_sprite = new Sprite();
 
     private boolean[] status_flags;
     boolean leftFalse_rightTrue;
     boolean red_droid_is_dead;
     boolean fire_weapon;
 
-    private float state_timer;
+    private float animation_state_timer;
     private float weapon_state_timer;
     private float weapon_position_x;
     private float weapon_position_y;
     private float android_position_w;
     private float android_position_h;
+    private float rate_of_fire;
+    private float rate_of_fire_limit;
+
 
     private int android_position_x;
     private int android_position_y;
     private int ammo;
-    private int rate_of_fire;
+
 
     public Red_Droid(PlayScreen screen, int x, int y){
         this.world = screen.getWorld();
@@ -88,14 +93,14 @@ public class Red_Droid extends Sprite {
         this.android_position_y = y;
 
         //Enumns
-        weapon = Weapon.ASSAULT_RIFLE;
-        current_state = State.IDLE;
-        previous_state = State.IDLE;this.android_position_w = 0.9f;
+        weapon = Weapon.PISTOL;
+        current_state = AnimationState.IDLE;
+        previous_state = AnimationState.IDLE;this.android_position_w = 0.9f;
         current_weapon_state = WeaponState.IDLE;
         previous_weapon_state = WeaponState.IDLE;
 
         //Floats
-        state_timer = 0;
+        animation_state_timer = 0;
         weapon_state_timer = 0;
         android_position_w = 0.9f;
         android_position_h = 0.9f;
@@ -112,144 +117,60 @@ public class Red_Droid extends Sprite {
         status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] = true;
 
         // Misc
-        animation_table_player = new HashMap<String, Animation<TextureRegion>>();
-        animation_table_weapon = new HashMap<String, Animation<TextureRegion>>();
+        animation_table_player = new HashMap<>();
+        animation_table_weapon = new HashMap<>();
+        bullet_start_positions = new Array<Vector2>();
+        bullet_velocities = new Array<Vector2>();
+        random = new Random();
+        weapon_sprite = new Sprite();
 
         initBox2D();
         initRedDroidTextureRegions();
         initWeaponTextureRegions();
         initWeaponV2LUT();
+        initBulletPositionVelocity();
+        configBulletStartPositionVelocity();
     }
 
     public void update(float dt){
-        setPosition(box_2d_body.getPosition().x - getWidth() / 2,
-                box_2d_body.getPosition().y - getHeight() / 2);
-
-        //setRegion(getFrame(dt));
-        setFrame(dt); //Originally getFrame returned a Texture region
-
-
+        setPosition(box_2d_body.getPosition().x - getWidth() / 2, box_2d_body.getPosition().y - getHeight() / 2);
+        configRedDroidFrame(dt);
         weaponUpdate(dt);
-
         outOfBounds();
-
-
-
 
         if (box_2d_body.getLinearVelocity().x > 1)
             box_2d_body.applyForce(new Vector2(-8f, 0), box_2d_body.getWorldCenter(), true);
         else if (box_2d_body.getLinearVelocity().x < -1)
             box_2d_body.applyForce(new Vector2(8f, 0), box_2d_body.getWorldCenter(), true);
-
     }
-
-    public void setFrame(float dt){
-        current_state = getState();
-
-        //TextureRegion region;
-        switch(current_state){
-            case DEAD: render_red_droid = animation_table_player.get("red_droid_dead").getKeyFrame(state_timer); break;
-            case JUMPING: render_red_droid = animation_table_player.get("red_droid_jumping").getKeyFrame(state_timer); break;
-            case RUNNING: render_red_droid = animation_table_player.get("red_droid_running").getKeyFrame(state_timer, true); break;
-            case FALLING: render_red_droid = animation_table_player.get("red_droid_falling").getKeyFrame(state_timer, true); break;
-            case IDLE:
-            default: render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(state_timer, true); break;
-        }
-
-        if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !render_red_droid.isFlipX()){
-            render_red_droid.flip(true, false);
-            leftFalse_rightTrue = false;
-        }
-        else if ((box_2d_body.getLinearVelocity().x > 0 || leftFalse_rightTrue) && render_red_droid.isFlipX()){
-            render_red_droid.flip(true, false);
-            leftFalse_rightTrue = true;
-        }
-
-        state_timer = current_state == previous_state ? state_timer + dt : 0;
-        previous_state = current_state;
-        //return render_red_droid;
-    }
-
-    public State getState(){
-
-        if (red_droid_is_dead)
-            return State.DEAD;
-        else if((box_2d_body.getLinearVelocity().y > 0 && current_state == State.JUMPING)
-                || (box_2d_body.getLinearVelocity().y > 0 && previous_state == State.JUMPING))
-            return State.JUMPING;
-
-        else if (box_2d_body.getLinearVelocity().y < 0)
-            return State.FALLING;
-
-        else if (box_2d_body.getLinearVelocity().x != 0)
-            return State.RUNNING;
-        else
-            return State.IDLE;
-
-    }
-
     public void weaponUpdate(float dt){
         configWeaponPosition();
-        setWeaponFrame(dt);
+        configWeaponFrame(dt);
     }
-
-    public void setWeaponFrame(float dt){
-        current_weapon_state = getWeaponState();
-
-        switch(current_weapon_state){
-            ///////////////////////////////////////////////
-            //looping animations look up 2 variable table//
-            ///////////////////////////////////////////////
-            case FIRE:
-                weapon_animation = V2LUT_weapon_animation
-                        .get(weapon)
-                        .get(current_weapon_state);
-                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer, true);
-                break;
-            ///////////////////////////////////////////////////
-            //Non looping animations look up 2 variable table//
-            ///////////////////////////////////////////////////
-            default:
-                weapon_animation = V2LUT_weapon_animation
-                        .get(weapon)
-                        .get(current_weapon_state);
-                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer);
-                break;
-        }
-
-
-        if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !render_weapon.isFlipX()){
-            render_weapon.flip(true, false);
-            leftFalse_rightTrue = false;
-        }
-        else if ((box_2d_body.getLinearVelocity().x > 0 || leftFalse_rightTrue) && render_weapon.isFlipX()){
-            render_weapon.flip(true, false);
-            leftFalse_rightTrue = true;
-        }
-
-        weapon_state_timer = current_weapon_state == previous_weapon_state ? weapon_state_timer + dt : 0;
-        previous_weapon_state = current_weapon_state;
-    }
-
-    public WeaponState getWeaponState(){
-
-        if((!fire_weapon) && (weapon_animation.isAnimationFinished(weapon_state_timer)))
-            return WeaponState.IDLE;
-        else  if((!fire_weapon) && (!weapon_animation.isAnimationFinished(weapon_state_timer))) {
-            return current_weapon_state;
-        }
-        else if ((fire_weapon) && (current_weapon_state == previous_weapon_state))
-            return WeaponState.FIRE;
-
-
-        return previous_weapon_state;
-    }
-
 
     //-----------------//
     // Actions Methods // Methods that perform actions/verbs in games
     //-----------------//
     public void jump(){
+        /* This method allows the player to jump only if their feets are not touching to ground.
+         * the status variable is defined else where
+         * */
+
+        if ( status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] != true) {
+            box_2d_body.applyLinearImpulse(new Vector2(0, 5f), box_2d_body.getWorldCenter(), true);
+            current_state = AnimationState.JUMPING;
+            sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_JUMP);
+            sound.play();
+        }
+        else if (status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] && box_2d_body.getLinearVelocity().y > 2){
+            if(box_2d_body.getLinearVelocity().y > 18) {
+                box_2d_body.applyForce(new Vector2(0, 28.4f), box_2d_body.getWorldCenter(), true);
+            }
+            else if (box_2d_body.getLinearVelocity().y < 18){
+                box_2d_body.applyForce(new Vector2(0,24.4f), box_2d_body.getWorldCenter(), true);
+            }
+        }
+
         /*if ( current_state != State.JUMPING && current_state != State.FALLING) {
             box_2d_body.applyLinearImpulse(new Vector2(0, 9f), box_2d_body.getWorldCenter(), true);
             current_state = State.JUMPING;
@@ -264,39 +185,48 @@ public class Red_Droid extends Sprite {
                 box_2d_body.applyForce(new Vector2(0,24.4f), box_2d_body.getWorldCenter(), true);
             }
         }*/
-        if ( status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] != true) {
-            box_2d_body.applyLinearImpulse(new Vector2(0, 5f), box_2d_body.getWorldCenter(), true);
-            current_state = State.JUMPING;
-            //status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] = true;
-            sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_JUMP);
-            sound.play();
-        }
-        else if (status_flags[MutantAlienAssualtMobileZ.Status.MIDAIR.value] && box_2d_body.getLinearVelocity().y > 2){
-            if(box_2d_body.getLinearVelocity().y > 18) {
-                box_2d_body.applyForce(new Vector2(0, 28.4f), box_2d_body.getWorldCenter(), true);
-            }
-            else if (box_2d_body.getLinearVelocity().y < 18){
-                box_2d_body.applyForce(new Vector2(0,24.4f), box_2d_body.getWorldCenter(), true);
-            }
+    }
+    public void fireWeapon(boolean fire_weapon, float dt){
+        /* This method set the fire_weapon boolean. It also increments the ammo lost after firing a shot.
+         * This varies weapons to weapon.
+         * */
+
+        this.fire_weapon = fire_weapon;
+
+        if((weapon != Weapon.UNARMED) && (this.fire_weapon)) {
+            Bullet b = screen.getBulletPool().obtain();
+            Array<Bullet> active_bullets = screen.getActiveBullets();
+
+            b.fireBullet(bullet_start_positions.get(random.nextInt(5)),
+                        bullet_velocities.get(random.nextInt(5)),
+                        weapon);
+
+            active_bullets.add(b);
+
+            ammo -= rate_of_fire;
         }
     }
+    public void dispenseWeaponFromDepot(){
+        /* This method sets the weapons variable from unarmed/pistol to a more powerful weapon.
+         * It also resets the weapons sprites bounds, and placement to fire bullets from.
+         * If the player already has a powerful weapon equiped. They are given more ammo instead.
+         * */
 
-    public void hit(){
+        weapon = Weapon.getRandomWeapon();
+        configBulletStartPositionVelocity();
+        configWeaponBounds();
+        configRateOfFire();
+    }
+    public void onHitDamage(){
+        /* This variable should first remove the player's weapon when hit by an enemies. Secondly it should kill
+         * the player if they get hit without a weapon.
+         * */
+
         if(!red_droid_is_dead) {
             red_droid_is_dead = true;
             sound = screen.getAssMan().manager.get(screen.getAssMan().SOUND_DAMAGE);
             sound.play();
         }
-    }
-
-    public void fireWeapon(boolean fire_weapon){
-        this.fire_weapon = fire_weapon;
-        ammo-= rate_of_fire;
-    }
-
-    public void dispenseWeaponFromDepot(){
-        weapon = Weapon.getRandomWeapon();
-        configWeaponBounds();
     }
 
     //--------------------------------//
@@ -350,16 +280,170 @@ public class Red_Droid extends Sprite {
 
         weapon_sprite.setPosition(weapon_position_x, weapon_position_y);
     }
+    private void configRateOfFire(){
+        /* This method configure the rate_of_fire & rate_of_fire limit. The rate_of_fire is the
+         * the fire rate of the weapon when the fire button is held down measured in millisecond.
+         * The rate_of_fire_limit define the maximum bullet rate weapon even if the player
+         * mashes the button
+         */
 
-    public boolean isDead(){
-        return red_droid_is_dead;
+        switch(weapon) {
+            case UNARMED:       rate_of_fire = 0;       rate_of_fire_limit = 0; break;
+            case PISTOL:        rate_of_fire = 0.1f;    rate_of_fire_limit = 0.05f; break;
+            case ASSAULT_RIFLE: rate_of_fire = 0.02f;   rate_of_fire_limit = 0.02f; break;
+            case SHOT_GUN:      rate_of_fire = 0.1f;    rate_of_fire_limit = 0.1f; break;
+        }
     }
+    private void configRedDroidFrame(float dt){
+        /* This method configure the current/previous animation state of the red droid.
+         * It also determines if a sprites is pointing left or right.
+         * */
 
-    public float getState_timer(){
-        return state_timer;
+        //------------------------------------------------//
+        // Determine the current state of the red android //
+        //------------------------------------------------//
+        current_state = configAnimationState();
+
+        //----------------------------------------------------------------------------------//
+        // Use the newly calculated current state in a Look table to get the correct frames //
+        //----------------------------------------------------------------------------------//
+        switch(current_state){
+            case DEAD: render_red_droid = animation_table_player.get("red_droid_dead").getKeyFrame(animation_state_timer); break;
+            case JUMPING: render_red_droid = animation_table_player.get("red_droid_jumping").getKeyFrame(animation_state_timer); break;
+            case RUNNING: render_red_droid = animation_table_player.get("red_droid_running").getKeyFrame(animation_state_timer, true); break;
+            case FALLING: render_red_droid = animation_table_player.get("red_droid_falling").getKeyFrame(animation_state_timer, true); break;
+            case IDLE:
+            default: render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(animation_state_timer, true); break;
+        }
+
+        //--------------------------------------------//
+        // Check which direction the player is facing //
+        //--------------------------------------------//
+        if ((box_2d_body.getLinearVelocity().x < 0 || !leftFalse_rightTrue) && !render_red_droid.isFlipX()){
+            render_red_droid.flip(true, false);
+            leftFalse_rightTrue = false;
+        }
+        else if ((box_2d_body.getLinearVelocity().x > 0 || leftFalse_rightTrue) && render_red_droid.isFlipX()){
+            render_red_droid.flip(true, false);
+            leftFalse_rightTrue = true;
+        }
+
+        animation_state_timer = current_state == previous_state ? animation_state_timer + dt : 0;
+        previous_state = current_state;
     }
+    private void configWeaponFrame(float dt){
+        /* This method configure the current/previous animation state of the weapon.
+         * It also determines if a sprites is pointing left or right.
+         * */
 
-    public boolean isFire_weapon(){ return fire_weapon; }
+        //-------------------------------------------//
+        // Determine the current state of the weapon //
+        //-------------------------------------------//
+        current_weapon_state = configWeaponState();
+
+        //----------------------------------------------------------------------------------//
+        // Use the newly calculated current state in a Look table to get the correct frames //
+        //----------------------------------------------------------------------------------//
+        switch(current_weapon_state){
+            //-----------------------------//
+            // Animations that should loop //
+            //-----------------------------//
+            case FIRE:
+                weapon_animation = V2LUT_weapon_animation
+                        .get(weapon)
+                        .get(current_weapon_state);
+                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer, true);
+                break;
+
+            //--------------------------------//
+            // Animations that shouldn't loop //
+            //--------------------------------//
+            default:
+                weapon_animation = V2LUT_weapon_animation
+                        .get(weapon)
+                        .get(current_weapon_state);
+                render_weapon = weapon_animation.getKeyFrame(weapon_state_timer);
+                break;
+        }
+
+        //--------------------------------------------//
+        // Check which direction the player is facing //
+        //--------------------------------------------//
+        if (!leftFalse_rightTrue && !render_weapon.isFlipX())
+            render_weapon.flip(true, false);
+        else if (leftFalse_rightTrue && render_weapon.isFlipX())
+            render_weapon.flip(true, false);
+
+        weapon_state_timer = current_weapon_state == previous_weapon_state ? weapon_state_timer + dt : 0;
+        previous_weapon_state = current_weapon_state;
+    }
+    private void configBulletStartPositionVelocity(){
+        /* This method configure the positioning and velocity of a bullet for each weapon.
+         * his is to ensure the bullet is spawned at the correct location and moves in the
+         * correct direction. This method is called when the player fire their weapon
+         */
+
+        switch(weapon) {
+            case PISTOL:
+                bullet_start_positions.get(0).y = weapon_position_x - (android_position_h * 25 / 100);
+                bullet_start_positions.get(1).y = weapon_position_x - (android_position_h * 35 / 100);
+                bullet_start_positions.get(2).y = weapon_position_x - (android_position_h * 45 / 100);
+                bullet_start_positions.get(3).y = weapon_position_x - (android_position_h * 30 / 100);
+                bullet_start_positions.get(4).y = weapon_position_x - (android_position_h * 20 / 100);
+
+                for(Vector2 bullet_px : bullet_start_positions)
+                    bullet_px.x = leftFalse_rightTrue
+                        ? weapon_position_x + (android_position_w * 25 / 100)
+                        : weapon_position_x + (android_position_w * 25 / 100);
+                break;
+
+            case ASSAULT_RIFLE:
+            case SHOT_GUN:
+                for(Vector2 bullet_px : bullet_start_positions) {
+                    bullet_px.x = weapon_position_x;
+                    bullet_px.y = weapon_position_y;
+                }
+                break;
+        }
+    }
+    private WeaponState configWeaponState(){
+        /* This method configure the animation state of the current weapon equiped using a
+         * variety of variables
+         * */
+
+        if((!fire_weapon) && (weapon_animation.isAnimationFinished(weapon_state_timer)))
+            return WeaponState.IDLE;
+
+        else  if((!fire_weapon) && (!weapon_animation.isAnimationFinished(weapon_state_timer)))
+            return current_weapon_state;
+
+        else if ((fire_weapon) && (current_weapon_state == previous_weapon_state))
+            return WeaponState.FIRE;
+
+
+        return previous_weapon_state;
+    }
+    private AnimationState configAnimationState(){
+        /* This animation configure the animation state using a variety of variables
+         * */
+
+        if (red_droid_is_dead)
+            return AnimationState.DEAD;
+
+        else if((box_2d_body.getLinearVelocity().y > 0 && current_state == AnimationState.JUMPING)
+                || (box_2d_body.getLinearVelocity().y > 0 && previous_state == AnimationState.JUMPING))
+            return AnimationState.JUMPING;
+
+        else if (box_2d_body.getLinearVelocity().y < 0)
+            return AnimationState.FALLING;
+
+        else if (box_2d_body.getLinearVelocity().x != 0)
+            return AnimationState.RUNNING;
+
+        else
+            return AnimationState.IDLE;
+
+    }
 
     //------------------------//
     // Initialization Methods // These methods are only called in the constructor
@@ -457,7 +541,7 @@ public class Red_Droid extends Sprite {
         //----------------//
         // The size to render the sprites. 1 meter high, 1 meter wide in ~my units
         setBounds(0, 0, 1, 1);
-        render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(state_timer, true);
+        render_red_droid = animation_table_player.get("red_droid_idle").getKeyFrame(animation_state_timer, true);
         setRegion(render_red_droid);
 
         /*/ Idle Animation
@@ -540,7 +624,7 @@ public class Red_Droid extends Sprite {
         /* This method initializes a two variable look up table for texture regions related to the weapon. This
          * is to make it easy to query the correct animation with the weapon currently equiped and the state/frame
          * it is displaying. This an automatic process.
-        */
+         */
 
         //-------------//
         // Declaration //
@@ -582,7 +666,38 @@ public class Red_Droid extends Sprite {
         V2LUT_weapon_animation.put(Weapon.ASSAULT_RIFLE, assualt_rifle_table);
         V2LUT_weapon_animation.put(Weapon.UNARMED, unarmed_table);
     }
+    private void initBulletPositionVelocity(){
+        /* Initialize 5 bullet position and velocities. these 2 variables can be selected randomly
+         * to scatter bullets. This leads to potentially 5x5 combination for how a bullet is fired.
+         */
 
+        bullet_start_positions.add( new Vector2(0,0));
+        bullet_start_positions.add( new Vector2(0,0));
+        bullet_start_positions.add( new Vector2(0,0));
+        bullet_start_positions.add( new Vector2(0,0));
+        bullet_start_positions.add( new Vector2(0,0));
+
+        bullet_velocities.add( new Vector2(0,0));
+        bullet_velocities.add( new Vector2(0,0));
+        bullet_velocities.add( new Vector2(0,0));
+        bullet_velocities.add( new Vector2(0,0));
+        bullet_velocities.add( new Vector2(0,0));
+    }
+
+    //----------------//
+    // Getter Methods // .................................................................... They get stuff.
+    //----------------//
+    public boolean isDead(){
+        return red_droid_is_dead;
+    }
+    public boolean isFire_weapon(){ return fire_weapon; }
+    public float getAnimationStateTimer(){
+        return animation_state_timer;
+    }
+
+    //----------------//
+    // Setter Methods // .................................................................... They set stuff.
+    //----------------//
     public void setStatusFlag(MutantAlienAssualtMobileZ.Status flag, boolean value){
         Gdx.app.log("red_droid", Float.toString(flag.value));
         switch(flag){
@@ -594,9 +709,9 @@ public class Red_Droid extends Sprite {
     public void outOfBounds(){
         // Destory all objects that leave the level boundaries
         if((box_2d_body.getPosition().x < 0) || (box_2d_body.getPosition().x > screen.getLevelWidth()))
-            hit();
+            onHitDamage();
         if((box_2d_body.getPosition().y < 0) || (box_2d_body.getPosition().y > screen.getLevelHeight()))
-            hit();
+            onHitDamage();
     }
 
     public void draw(Batch batch){

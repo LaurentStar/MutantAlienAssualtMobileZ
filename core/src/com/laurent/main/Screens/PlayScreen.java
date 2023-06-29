@@ -20,6 +20,8 @@ import com.laurent.main.Scenes.Controller;
 import com.laurent.main.Scenes.Hud;
 import com.laurent.main.Sprites.BackGroundTrigger.WeaponDepot;
 import com.laurent.main.Sprites.Enemies.Enemy;
+import com.laurent.main.Sprites.Items.Bullet;
+import com.laurent.main.Sprites.Items.BulletPool;
 import com.laurent.main.Sprites.Items.Globe;
 import com.laurent.main.Sprites.Items.Item;
 import com.laurent.main.Sprites.Items.ItemDefintion;
@@ -28,7 +30,7 @@ import com.laurent.main.Tools.Box2dWorldcCreator;
 import com.laurent.main.Tools.MyAssetManager;
 import com.laurent.main.Tools.MyQueryCallback;
 import com.laurent.main.Tools.WorldContactListener;
-
+//https://www.gamedevelopment.blog/libgdx-object-pooling/
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class PlayScreen implements Screen {
@@ -53,6 +55,8 @@ public class PlayScreen implements Screen {
     private Array<Item> items;
     private Array<Item> bullets;
     private LinkedBlockingQueue<ItemDefintion> items_to_spawn;
+    private final Array<Bullet> activeBullets = new Array<Bullet>();
+    private final BulletPool bp;
 
     public PlayScreen(MutantAlienAssualtMobileZ game){
         atlas = new TextureAtlas("all_characters_pack_one.pack");
@@ -112,6 +116,7 @@ public class PlayScreen implements Screen {
         items_to_spawn = new LinkedBlockingQueue<ItemDefintion>();
 
         bullets = new Array<Item>();
+        bp =  new BulletPool(16, 30, this);
     }
 
     public void spawnItem(ItemDefintion item_def){
@@ -138,13 +143,13 @@ public class PlayScreen implements Screen {
     }
 
     public void handleInput(float dt){
-        if(player.current_state != Red_Droid.State.DEAD) {
+        if(player.current_state != Red_Droid.AnimationState.DEAD) {
             if (controller.isJumpPressed()) {
                 player.jump();
             }
 
 
-            player.fireWeapon(controller.isFireWeaponPressed());
+            player.fireWeapon(controller.isFireWeaponPressed(), dt);
 
 
             if (controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= MutantAlienAssualtMobileZ.MAX_INPUT_SPEED)
@@ -176,6 +181,8 @@ public class PlayScreen implements Screen {
             item.update(dt);
         for(WeaponDepot weapon_depot : creator.getWeaponDepots())
             weapon_depot.update(dt);
+        for(Bullet bullet:activeBullets)
+            bullet.update();
 
         hud.update(dt);
 
@@ -197,8 +204,6 @@ public class PlayScreen implements Screen {
         box_2d_debug_renderer.render(world, game_cam.combined);
 
 
-
-
         game.batch.setProjectionMatrix(game_cam.combined);
 
         game.batch.begin();
@@ -214,6 +219,8 @@ public class PlayScreen implements Screen {
 
             player.draw(game.batch);
 
+            for(Bullet bullet:activeBullets)
+                bullet.draw(game.batch);
         game.batch.end();
 
 
@@ -237,25 +244,29 @@ public class PlayScreen implements Screen {
 
     }
 
-    public int getLevelWidth(){
-        return level_width;
-    }
 
+    //----------------//
+    // Getter Methods // .................................................................... They get stuff.
+    //----------------//
     public int getLevelHeight(){
         return level_height;
     }
-
-    public TiledMap getMap(){
-        return map;
+    public int getLevelWidth(){
+        return level_width;
     }
-
     public World getWorld(){
         return world;
     }
-
+    public TiledMap getMap(){
+        return map;
+    }
     public MyAssetManager getAssMan(){
         return  ass_man;
     }
+    public Array<Bullet> getActiveBullets(){return activeBullets;}
+    public BulletPool getBulletPool(){return bp;}
+
+
 
     public void keepCamInBound(){
         game_cam.position.x = (game_cam.position.x < 0) ? 0 : game_cam.position.x;
@@ -290,7 +301,7 @@ public class PlayScreen implements Screen {
     }
 
     public boolean gameOver(){
-        if(player.current_state == Red_Droid.State.DEAD && player.getState_timer() > 3){
+        if(player.current_state == Red_Droid.AnimationState.DEAD && player.getAnimationStateTimer() > 3){
             return true;
         }
         return false;
