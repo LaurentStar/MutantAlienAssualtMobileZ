@@ -1,6 +1,5 @@
 android {
-    buildToolsVersion "29.0.2"
-    compileSdkVersion 29
+    compileSdkVersion 32
     sourceSets {
         main {
             manifest.srcFile 'AndroidManifest.xml'
@@ -19,7 +18,7 @@ android {
     defaultConfig {
         applicationId "com.laurent.main"
         minSdkVersion 14
-        targetSdkVersion 29
+        targetSdkVersion 32
         versionCode 1
         versionName "1.0"
     }
