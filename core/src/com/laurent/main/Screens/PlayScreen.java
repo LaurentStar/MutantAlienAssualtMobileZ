@@ -26,7 +26,7 @@ import com.laurent.main.Sprites.Items.Globe;
 import com.laurent.main.Sprites.Items.Item;
 import com.laurent.main.Sprites.Items.ItemDefintion;
 import com.laurent.main.Sprites.Red_Droid;
-import com.laurent.main.Tools.Box2dWorldcCreator;
+import com.laurent.main.Tools.Box2dWorldCreator;
 import com.laurent.main.Tools.MyAssetManager;
 import com.laurent.main.Tools.MyQueryCallback;
 import com.laurent.main.Tools.WorldContactListener;
@@ -50,13 +50,12 @@ public class PlayScreen implements Screen {
     private int level_height;
     private World world;
     private Box2DDebugRenderer box_2d_debug_renderer;
-    private Box2dWorldcCreator creator;
+    private Box2dWorldCreator creator;
     private TextureAtlas atlas;
     private Array<Item> items;
-    private Array<Item> bullets;
     private LinkedBlockingQueue<ItemDefintion> items_to_spawn;
-    private final Array<Bullet> activeBullets = new Array<Bullet>();
-    private final BulletPool bp;
+    private final Array<Bullet> active_bullets = new Array<Bullet>();
+    private final BulletPool bullet_pool;
 
     public PlayScreen(MutantAlienAssualtMobileZ game){
         atlas = new TextureAtlas("all_characters_pack_one.pack");
@@ -107,7 +106,7 @@ public class PlayScreen implements Screen {
         music.setLooping(true);
 
 
-        creator = new Box2dWorldcCreator(this);
+        creator = new Box2dWorldCreator(this);
         player = creator.getPlayer(); //new Red_Droid(this);
 
         world.setContactListener(new WorldContactListener());
@@ -115,8 +114,7 @@ public class PlayScreen implements Screen {
         items = new Array<Item>();
         items_to_spawn = new LinkedBlockingQueue<ItemDefintion>();
 
-        bullets = new Array<Item>();
-        bp =  new BulletPool(16, 30, this);
+        bullet_pool =  new BulletPool(16, 30, this);
     }
 
     public void spawnItem(ItemDefintion item_def){
@@ -148,9 +146,7 @@ public class PlayScreen implements Screen {
                 player.jump();
             }
 
-
             player.fireWeapon(controller.isFireWeaponPressed(), dt);
-
 
             if (controller.isRightPressed() && player.box_2d_body.getLinearVelocity().x <= MutantAlienAssualtMobileZ.MAX_INPUT_SPEED)
                 player.box_2d_body.applyLinearImpulse(new Vector2(0.6f, 0), player.box_2d_body.getWorldCenter(), true);
@@ -181,8 +177,19 @@ public class PlayScreen implements Screen {
             item.update(dt);
         for(WeaponDepot weapon_depot : creator.getWeaponDepots())
             weapon_depot.update(dt);
-        for(Bullet bullet:activeBullets)
-            bullet.update();
+        for(Bullet bullet: active_bullets)
+            bullet.update(dt);
+        for(Bullet bullet: active_bullets) {
+            if (bullet.getAlive() == false) {
+                bullet_pool.free(bullet); // place back in pool
+                active_bullets.removeValue(bullet, true); // remove bullet
+            }
+        }
+
+        // Print how many bullet are currently active
+        System.out.println("active bullet count\n");
+        System.out.println(active_bullets.size);
+
 
         hud.update(dt);
 
@@ -206,6 +213,7 @@ public class PlayScreen implements Screen {
 
         game.batch.setProjectionMatrix(game_cam.combined);
 
+
         game.batch.begin();
             for(WeaponDepot weapon_depot : creator.getWeaponDepots()) {
                 weapon_depot.draw(game.batch);
@@ -219,7 +227,7 @@ public class PlayScreen implements Screen {
 
             player.draw(game.batch);
 
-            for(Bullet bullet:activeBullets)
+            for(Bullet bullet: active_bullets)
                 bullet.draw(game.batch);
         game.batch.end();
 
@@ -263,8 +271,8 @@ public class PlayScreen implements Screen {
     public MyAssetManager getAssMan(){
         return  ass_man;
     }
-    public Array<Bullet> getActiveBullets(){return activeBullets;}
-    public BulletPool getBulletPool(){return bp;}
+    public Array<Bullet> getActiveBullets(){return active_bullets;}
+    public BulletPool getBulletPool(){return bullet_pool;}
 
 
 

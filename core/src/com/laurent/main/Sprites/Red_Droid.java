@@ -129,7 +129,8 @@ public class Red_Droid extends Sprite {
         initWeaponTextureRegions();
         initWeaponV2LUT();
         initBulletPositionVelocity();
-        configBulletStartPositionVelocity();
+        configBulletSpawnPosition();
+        configBulletVelocity();
     }
 
     public void update(float dt){
@@ -149,10 +150,10 @@ public class Red_Droid extends Sprite {
     }
 
     //-----------------//
-    // Actions Methods // Methods that perform actions/verbs in games
+    // Actions Methods // The various actiions of the red droid
     //-----------------//
     public void jump(){
-        /* This method allows the player to jump only if their feets are not touching to ground.
+        /* This method allows the player to jump only if their feet are not touching to ground.
          * the status variable is defined else where
          * */
 
@@ -197,9 +198,11 @@ public class Red_Droid extends Sprite {
             Bullet b = screen.getBulletPool().obtain();
             Array<Bullet> active_bullets = screen.getActiveBullets();
 
+            configBulletSpawnPosition();
+            configBulletVelocity();
             b.fireBullet(bullet_start_positions.get(random.nextInt(5)),
-                        bullet_velocities.get(random.nextInt(5)),
-                        weapon);
+                         bullet_velocities.get(random.nextInt(5)),
+                         weapon);
 
             active_bullets.add(b);
 
@@ -213,7 +216,8 @@ public class Red_Droid extends Sprite {
          * */
 
         weapon = Weapon.getRandomWeapon();
-        configBulletStartPositionVelocity();
+        configBulletSpawnPosition();
+        configBulletVelocity();
         configWeaponBounds();
         configRateOfFire();
     }
@@ -377,24 +381,55 @@ public class Red_Droid extends Sprite {
         weapon_state_timer = current_weapon_state == previous_weapon_state ? weapon_state_timer + dt : 0;
         previous_weapon_state = current_weapon_state;
     }
-    private void configBulletStartPositionVelocity(){
-        /* This method configure the positioning and velocity of a bullet for each weapon.
-         * his is to ensure the bullet is spawned at the correct location and moves in the
-         * correct direction. This method is called when the player fire their weapon
+    private void configBulletSpawnPosition(){
+        /* This method configure the positioning a bullet for each weapon. his is to
+         * ensure the bullet is spawned at the correct location.
+         * This method is called in the fireWeapon() method
          */
 
         switch(weapon) {
             case PISTOL:
-                bullet_start_positions.get(0).y = weapon_position_x - (android_position_h * 25 / 100);
-                bullet_start_positions.get(1).y = weapon_position_x - (android_position_h * 35 / 100);
-                bullet_start_positions.get(2).y = weapon_position_x - (android_position_h * 45 / 100);
-                bullet_start_positions.get(3).y = weapon_position_x - (android_position_h * 30 / 100);
-                bullet_start_positions.get(4).y = weapon_position_x - (android_position_h * 20 / 100);
+                bullet_start_positions.get(0).y = weapon_position_y + (android_position_h * 45 / 100);
+                bullet_start_positions.get(1).y = weapon_position_y + (android_position_h * 65 / 100);
+                bullet_start_positions.get(2).y = weapon_position_y + (android_position_h * 75 / 100);
+                bullet_start_positions.get(3).y = weapon_position_y + (android_position_h * 80 / 100);
+                bullet_start_positions.get(4).y = weapon_position_y + (android_position_h * 50 / 100);
 
-                for(Vector2 bullet_px : bullet_start_positions)
-                    bullet_px.x = leftFalse_rightTrue
-                        ? weapon_position_x + (android_position_w * 25 / 100)
-                        : weapon_position_x + (android_position_w * 25 / 100);
+                for(int i=0; i<bullet_start_positions.size; i++) {
+                    bullet_start_positions.get(i).x = leftFalse_rightTrue
+                            ? weapon_position_x + (android_position_w * 120 / 100) //right
+                            : weapon_position_x + (android_position_w * 100 / 100); //left
+                }
+                break;
+
+            case ASSAULT_RIFLE:
+            case SHOT_GUN:
+                for(Vector2 bullet_px : bullet_start_positions) {
+                    bullet_px.x = weapon_position_x;
+                    bullet_px.y = weapon_position_y;
+                }
+                break;
+        }
+    }
+    private void configBulletVelocity(){
+        /* This method configure the velocity of a bullet for each weapon.
+         * his is to ensure the bullet moves in the correct direction.
+         * This method is called when the player fire their weapon
+         */
+
+        switch(weapon) {
+            case PISTOL:
+                bullet_velocities.get(0).y = -0.1f;
+                bullet_velocities.get(1).y = -0.2f;
+                bullet_velocities.get(2).y = 0.0f;
+                bullet_velocities.get(3).y = 0.2f;
+                bullet_velocities.get(4).y = 0.1f;
+
+                for(int i=0; i<bullet_start_positions.size; i++) {
+                    bullet_velocities.get(i).x = leftFalse_rightTrue
+                            ? 14.0f
+                            : -14.0f;
+                }
                 break;
 
             case ASSAULT_RIFLE:
@@ -696,7 +731,7 @@ public class Red_Droid extends Sprite {
     }
 
     //----------------//
-    // Setter Methods // .................................................................... They set stuff.
+    // Setter Methods // ...................................................................
     //----------------//
     public void setStatusFlag(MutantAlienAssualtMobileZ.Status flag, boolean value){
         Gdx.app.log("red_droid", Float.toString(flag.value));

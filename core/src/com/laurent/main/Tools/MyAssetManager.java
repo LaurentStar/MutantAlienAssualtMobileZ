@@ -25,6 +25,5 @@ public class MyAssetManager {
         manager.load(SOUND_JUMP, Sound.class);
         manager.load(SOUND_METAL_CLICK, Sound.class);
         manager.load(SOUND_DAMAGE, Sound.class);
-
     }
 }

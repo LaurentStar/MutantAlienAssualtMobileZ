@@ -18,11 +18,11 @@ import com.laurent.main.Sprites.Red_Droid;
 import com.laurent.main.Sprites.TileObjects.Brick;
 import com.laurent.main.Sprites.TileObjects.Coin;
 
-public class Box2dWorldcCreator {
+public class Box2dWorldCreator {
     private Array<GreenRam> green_rams;
     private Array<WeaponDepot> weapon_depots;
     private Red_Droid player;
-    public Box2dWorldcCreator(PlayScreen screen){
+    public Box2dWorldCreator(PlayScreen screen){
         World world = screen.getWorld();
         TiledMap map = screen.getMap();
         BodyDef body_def = new BodyDef();

@@ -28,88 +28,94 @@ public class Bullet extends Sprite implements Poolable {
     public Body box_2d_body;
     public World world;
     private PlayScreen screen;
-    private Red_Droid.Weapon type;
-    private Red_Droid.Weapon previous_type;
+    private Red_Droid.Weapon weapon_type;
     private Map<String, Animation<TextureRegion>> animation_table_bullet;
     private TextureRegion render_bullet;
     private int damage;
     private float animation_state_timer;
+    private float alive_timer;
+    public boolean alive;
 
     Bullet(PlayScreen screen){
-        //Vector2D//
+
         position = new Vector2(0,0);
         direction = new Vector2(0,0);
         width_length = new Vector2(0,0);
-
-        //Enum//
-        type = Red_Droid.Weapon.UNARMED;
-        previous_type = Red_Droid.Weapon.UNARMED;
-
-        //Int//
-        damage = 0;
-        animation_state_timer = 0;
-
-        //Misc//
-        world = screen.getWorld();
+        weapon_type = Red_Droid.Weapon.UNARMED;
+        this.damage = 0;
+        this.alive_timer = 0;
+        this.animation_state_timer = 0;
+        this.world = screen.getWorld();
         this.screen = screen;
+        this.alive = false;
         animation_table_bullet = new HashMap<String, Animation<TextureRegion>>();
         initBox2D();
         initBulletTextureRegions();
     }
+
 
     @Override
     public void reset() {
         //called when bullet is freed
         this.position.set(0,0);
         this.direction.set(0,0);
-        System.out.println("Bullet is reset");
-
+        this.alive = false;
+        this.alive_timer = 0;
+        this.box_2d_body.setLinearVelocity(direction);
+//        System.out.println("Bullet is reset");
     }
 
-    public void update(){
+    public void update(float dt){
+
+        alive_timer += dt;
+
+        if (alive_timer > 5) {
+            alive = false;
+        }
+
         setPosition(box_2d_body.getPosition().x - getWidth() / 2, box_2d_body.getPosition().y - getHeight() / 2);
 
-        // method for us to call to update our bullets logic
-        position.add(direction);
+
+//            System.out.println("Bullet direction is applied");
+//            System.out.println(this.direction);
         configBulletFrame();
+
+
     }
 
 
     //-----------------//
     // Actions Methods // Methods that perform actions/verbs in games
     //-----------------//
-    public void fireBullet(int xpos, int ypos, int xvel, int yvel){
-        // method for setting bullets position and direction (firing)
-        this.position.set(xpos,ypos);
-        this.direction.set(xvel,yvel);
-    }
-    public void fireBullet(Vector2 pos, Vector2 dir, Red_Droid.Weapon type){
+    public void fireBullet(Vector2 pos, Vector2 dir, Red_Droid.Weapon weapon_type){
+        this.alive = true;
         this.position = pos;
         this.direction = dir;
-        this.type = type;
+        this.weapon_type = weapon_type;
 
+        box_2d_body.setTransform(position, 0);
+        box_2d_body.setLinearVelocity(direction);
         configBulletWidthLength();
-        ReshapeBullet();
         configBulletDamage();
     }
-    private void ReshapeBullet(){
-        if(previous_type != type) {
-            FixtureDef fdef = new FixtureDef();
-            PolygonShape shape = new PolygonShape();
-
-            shape.setAsBox((width_length.x / 2), (width_length.y / 2));
-            fdef.filter.categoryBits = MutantAlienAssualtMobileZ.BULLET_BIT;
-            fdef.shape = shape;
-            box_2d_body.createFixture(fdef).setUserData(this);
-            previous_type = type;
-        }
-    }
+//    private void ReshapeBullet(){
+//        if(previous_type != type) {
+//            FixtureDef fdef = new FixtureDef();
+//            PolygonShape shape = new PolygonShape();
+//
+//            shape.setAsBox((width_length.x / 2), (width_length.y / 2));
+//            fdef.filter.categoryBits = MutantAlienAssualtMobileZ.BULLET_BIT;
+//            fdef.shape = shape;
+//            box_2d_body.createFixture(fdef).setUserData(this);
+//            previous_type = type;
+//        }
+//    }
 
     //--------------------------------//
     // Run Time Configuration Methods // ...................................................
     //--------------------------------//
     private void configBulletDamage(){
-        switch(type){
+        switch(weapon_type){
             case UNARMED: damage = 0; break;
             case PISTOL: damage = 10; break;
             case ASSAULT_RIFLE: damage = 3; break;
@@ -117,7 +123,7 @@ public class Bullet extends Sprite implements Poolable {
         }
     }
     private void configBulletWidthLength(){
-        switch(type){
+        switch(weapon_type){
             case UNARMED:
                 width_length.x = 0;
                 width_length.y = 0;
@@ -134,7 +140,7 @@ public class Bullet extends Sprite implements Poolable {
         }
     }
     private void configBulletFrame(){
-        switch(type){
+        switch(weapon_type){
             case UNARMED: case ASSAULT_RIFLE: case PISTOL:
                 render_bullet = animation_table_bullet.get("blue_bullet").getKeyFrame(0);
                 break;
@@ -150,7 +156,7 @@ public class Bullet extends Sprite implements Poolable {
     //------------------------//
     private void initBox2D(){
         /* This method create a bod2d object and inserts it into the world. It also creates additional
-         * components of the player such as the feet used to detect collision with the ground.
+         * components of the bullet
          * */
 
         //-------------//
@@ -168,7 +174,7 @@ public class Bullet extends Sprite implements Poolable {
         box_2d_body = world.createBody(body_def);
 
         //----------------------------------------------//
-        // Define player fixture definition & collision //
+        // Define bullet fixture definition & collision //
         //----------------------------------------------//
         configBulletWidthLength();
         shape.setAsBox((width_length.x/2), (width_length.y/2));
@@ -211,5 +217,12 @@ public class Bullet extends Sprite implements Poolable {
     public void draw(Batch batch){
         setRegion(render_bullet);
         super.draw(batch);
+    }
+
+    //----------------//
+    // Getter Methods //
+    //----------------//
+    public boolean getAlive(){
+        return alive;
     }
 }
