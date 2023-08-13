@@ -4,7 +4,7 @@ Current Objective:
 - ✔️ fix bullet velocity change while active bug
 - ✔️ fix bullet pooling bug
 - ✔️ limit bullet pool to 150 bullets at most.
-- fix pistol animation controls
+- 📶 fix pistol animation controls (Too costly to fix)
 - ✔️ fire bullet based on frame with pistol
 - ✔️ apply fire rate to weapon
 - fix green ram charging logic.
