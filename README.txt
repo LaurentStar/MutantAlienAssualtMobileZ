@@ -7,4 +7,4 @@ Current Objective:
 - 📶 fix pistol animation controls (Too costly to fix)
 - ✔️ fire bullet based on frame with pistol
 - ✔️ apply fire rate to weapon
-- fix green ram charging logic.
+- ✔️ fix green ram charging logic.
