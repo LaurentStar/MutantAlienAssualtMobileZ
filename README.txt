@@ -8,3 +8,6 @@ Current Objective:
 - ✔️ fire bullet based on frame with pistol
 - ✔️ apply fire rate to weapon
 - ✔️ fix green ram charging logic.
+- update libaries
+- update gradle
+- update androind versioning and java version
