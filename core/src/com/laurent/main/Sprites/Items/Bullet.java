@@ -69,7 +69,7 @@ public class Bullet extends Sprite implements Poolable {
 
         alive_timer += dt;
 
-        if (alive_timer > 5) {
+        if (alive_timer > 2) {
             alive = false;
         }
 

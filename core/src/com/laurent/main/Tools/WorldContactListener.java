@@ -119,9 +119,11 @@ public class WorldContactListener implements ContactListener {
                     {AbstractMap.SimpleEntry<String, Red_Droid> tmp = ((AbstractMap.SimpleEntry) fix.getUserData());
                     tmp.getValue().setStatusFlag(MutantAlienAssualtMobileZ.Status.MIDAIR, false);} break;
                 case "enemy_right":
+                {AbstractMap.SimpleEntry<String, Enemy> tmp = ((AbstractMap.SimpleEntry) fix.getUserData());
+                    tmp.getValue().moveLeftFalseOrRightTrue(false);} break;
                 case "enemy_left":
                 {AbstractMap.SimpleEntry<String, Enemy> tmp = ((AbstractMap.SimpleEntry) fix.getUserData());
-                    tmp.getValue().reverseVelocity(true, false);} break;
+                    tmp.getValue().moveLeftFalseOrRightTrue(true);} break;
 
             }
         }

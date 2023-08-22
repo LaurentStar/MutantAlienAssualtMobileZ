@@ -28,7 +28,8 @@ public class Red_Droid extends Sprite {
     public AnimationState current_state;
     public AnimationState previous_state;
 
-    private enum WeaponState {IDLE, FIRE, RELOAD, VIRTUAL_IDLE, VIRTUAL_FIRE, VIRTUAL_RELOAD};
+
+    private enum WeaponState {IDLE, FIRE, REFIRE, RELOAD, VIRTUAL_IDLE, VIRTUAL_FIRE, VIRTUAL_RELOAD};
     private WeaponState current_weapon_state;
     private WeaponState previous_weapon_state;
 
@@ -58,6 +59,7 @@ public class Red_Droid extends Sprite {
     private TextureRegion render_weapon;
     private Animation<TextureRegion> weapon_animation;
 
+
     // This map encapsulate the animations for less code
     private Map<String, Animation<TextureRegion>> animation_table_player;
     private Map<String, Animation<TextureRegion>> animation_table_weapon;
@@ -79,6 +81,7 @@ public class Red_Droid extends Sprite {
     private float android_position_h;
     private float rate_of_fire;
     private float rate_of_fire_limit;
+    private float rate_of_fire_timer;
 
 
     private int android_position_x;
@@ -108,6 +111,7 @@ public class Red_Droid extends Sprite {
         //Ints
         ammo = 0;
         rate_of_fire = 1;
+        rate_of_fire_timer = 0;
 
         //Boolean
         leftFalse_rightTrue = true;
@@ -131,6 +135,7 @@ public class Red_Droid extends Sprite {
         initBulletPositionVelocity();
         configBulletSpawnPosition();
         configBulletVelocity();
+        configRateOfFire();
     }
 
     public void update(float dt){
@@ -147,6 +152,7 @@ public class Red_Droid extends Sprite {
     public void weaponUpdate(float dt){
         configWeaponPosition();
         configWeaponFrame(dt);
+        rate_of_fire_timer = rate_of_fire_timer <= 100 ? rate_of_fire_timer + dt : rate_of_fire;
     }
 
     //-----------------//
@@ -195,18 +201,42 @@ public class Red_Droid extends Sprite {
         this.fire_weapon = fire_weapon;
 
         if((weapon != Weapon.UNARMED) && (this.fire_weapon)) {
-            Bullet b = screen.getBulletPool().obtain();
+
             Array<Bullet> active_bullets = screen.getActiveBullets();
+            if(active_bullets.size > 200)
+                return;
 
-            configBulletSpawnPosition();
-            configBulletVelocity();
-            b.fireBullet(bullet_start_positions.get(random.nextInt(5)),
-                         bullet_velocities.get(random.nextInt(5)),
-                         weapon);
+            // spawn bullets based on if the pistol's is in firing animation. !special compared to other guns
+            if(weapon == Weapon.PISTOL){
+                if(rate_of_fire_timer > rate_of_fire){
+                    Bullet b = screen.getBulletPool().obtain();
 
-            active_bullets.add(b);
 
-            ammo -= rate_of_fire;
+                    configBulletSpawnPosition();
+                    configBulletVelocity();
+                    b.fireBullet(bullet_start_positions.get(random.nextInt(5)),
+                            bullet_velocities.get(random.nextInt(5)),
+                            weapon);
+
+                    active_bullets.add(b);
+                    rate_of_fire_timer = 0;
+                    ammo -= 1;
+                }
+            }
+            else {
+                Bullet b = screen.getBulletPool().obtain();
+
+
+                configBulletSpawnPosition();
+                configBulletVelocity();
+                b.fireBullet(bullet_start_positions.get(random.nextInt(5)),
+                        bullet_velocities.get(random.nextInt(5)),
+                        weapon);
+
+                active_bullets.add(b);
+                rate_of_fire_timer = 0;
+                ammo -= 1;
+            }
         }
     }
     public void dispenseWeaponFromDepot(){
@@ -293,7 +323,7 @@ public class Red_Droid extends Sprite {
 
         switch(weapon) {
             case UNARMED:       rate_of_fire = 0;       rate_of_fire_limit = 0; break;
-            case PISTOL:        rate_of_fire = 0.1f;    rate_of_fire_limit = 0.05f; break;
+            case PISTOL:        rate_of_fire = 0.35f;   rate_of_fire_limit = 0.05f; break;
             case ASSAULT_RIFLE: rate_of_fire = 0.02f;   rate_of_fire_limit = 0.02f; break;
             case SHOT_GUN:      rate_of_fire = 0.1f;    rate_of_fire_limit = 0.1f; break;
         }
@@ -358,7 +388,6 @@ public class Red_Droid extends Sprite {
                         .get(current_weapon_state);
                 render_weapon = weapon_animation.getKeyFrame(weapon_state_timer, true);
                 break;
-
             //--------------------------------//
             // Animations that shouldn't loop //
             //--------------------------------//
@@ -449,10 +478,10 @@ public class Red_Droid extends Sprite {
         if((!fire_weapon) && (weapon_animation.isAnimationFinished(weapon_state_timer)))
             return WeaponState.IDLE;
 
-        else  if((!fire_weapon) && (!weapon_animation.isAnimationFinished(weapon_state_timer)))
+        else if((!fire_weapon) && (!weapon_animation.isAnimationFinished(weapon_state_timer)))
             return current_weapon_state;
 
-        else if ((fire_weapon) && (current_weapon_state == previous_weapon_state))
+        else if (fire_weapon) //&& (current_weapon_state == previous_weapon_state))
             return WeaponState.FIRE;
 
 
@@ -720,7 +749,7 @@ public class Red_Droid extends Sprite {
     }
 
     //----------------//
-    // Getter Methods // .................................................................... They get stuff.
+    // Getter Methods // ...................................................................
     //----------------//
     public boolean isDead(){
         return red_droid_is_dead;

@@ -7,6 +7,7 @@ import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.World;
 import com.laurent.main.MutantAlienAssualtMobileZ;
 import com.laurent.main.Screens.PlayScreen;
+import java.lang.Math;
 
 public abstract class Enemy extends Sprite{
 
@@ -55,6 +56,12 @@ public abstract class Enemy extends Sprite{
         if (y)
             velocity.y = -velocity.y;
 
+        box_2d_body.setLinearVelocity(velocity);
+    }
+    public void moveLeftFalseOrRightTrue(boolean  leftFalse_rightTrue){
+        velocity.x = leftFalse_rightTrue
+                ?  Math.abs(velocity.x) //right
+                : -Math.abs(velocity.x); //left
         box_2d_body.setLinearVelocity(velocity);
     }
 

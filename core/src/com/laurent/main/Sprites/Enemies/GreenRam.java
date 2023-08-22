@@ -59,8 +59,8 @@ public class GreenRam extends Enemy {
             setPosition(box_2d_body.getPosition().x - getWidth() / 2, box_2d_body.getPosition().y - getHeight() / 2);
             setRegion(getFrame(dt));
 
-            if(box_2d_body.getLinearVelocity().x <= MutantAlienAssualtMobileZ.Speed.FAST.value
-                    && box_2d_body.getLinearVelocity().x >= -MutantAlienAssualtMobileZ.Speed.FAST.value)
+            if(box_2d_body.getLinearVelocity().x <= MutantAlienAssualtMobileZ.Speed.SLOW.value
+                    && box_2d_body.getLinearVelocity().x >= -MutantAlienAssualtMobileZ.Speed.SLOW.value)
                 box_2d_body.applyLinearImpulse(velocity, box_2d_body.getWorldCenter(), true);
         }
     }
@@ -112,6 +112,16 @@ public class GreenRam extends Enemy {
     }
 
     @Override
+    public void reverseVelocity(boolean x, boolean y) {
+        super.reverseVelocity(x, y);
+    }
+
+    @Override
+    public void moveLeftFalseOrRightTrue(boolean leftFalse_rightTrue){
+        super.moveLeftFalseOrRightTrue(leftFalse_rightTrue);
+    }
+
+    @Override
     protected void defineEnemy() {
         BodyDef body_def = new BodyDef();
         body_def.position.set((getX() + getWidth()/2) / MutantAlienAssualtMobileZ.UNIT_SCALE,
@@ -138,14 +148,14 @@ public class GreenRam extends Enemy {
         sensor.set(new Vector2(0.55f, 0.40f), new Vector2(0.55f, -0.40f));
         fdef.shape = sensor;
         fdef.isSensor = true;
-        AbstractMap.SimpleEntry<String, Red_Droid> pair = new AbstractMap.SimpleEntry("enemy_right", this);
+        AbstractMap.SimpleEntry<String, GreenRam> pair = new AbstractMap.SimpleEntry("enemy_right", this);
         box_2d_body.createFixture(fdef).setUserData(pair);
 
         sensor.set(new Vector2(-0.55f, 0.40f), new Vector2(-0.55f, -0.40f));
         fdef.shape = sensor;
         //fdef.isSensor = true;
-        AbstractMap.SimpleEntry<String, Red_Droid> pair_left = new AbstractMap.SimpleEntry("enemy_left", this);
-        box_2d_body.createFixture(fdef).setUserData(pair);
+        AbstractMap.SimpleEntry<String, GreenRam> pair_left = new AbstractMap.SimpleEntry("enemy_left", this);
+        box_2d_body.createFixture(fdef).setUserData(pair_left);
 
         /*PolygonShape head = new PolygonShape();
         Vector2[] vertice = new Vector2[4];
