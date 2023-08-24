@@ -10,4 +10,7 @@ Current Objective:
 - ✔️ fix green ram charging logic.
 - ✔️ update libaries
 - ✔️ update gradle
-- ✔️ update androind versioning and java version
+- ✔️ update andoind versioning and java version
+- Bullet Colission with environment
+- Bullet strikes surface animation
+- Bullet sensors added to play correct bullet striking animation based on how it collided
