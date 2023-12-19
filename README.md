@@ -9,3 +9,6 @@ This is a port of the classic miniclip game Mutant Alien Assault. Enjoy arena ba
 
 - ## Hard lessons
   - Create gameplay first with simple shapes.
+
+- ## Most recent notes
+  - Currently bullets have no width or height. I must either resize the bullet or create multiple pools for different bullet types. I am unsure
