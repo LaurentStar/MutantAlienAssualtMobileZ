@@ -13,5 +13,7 @@ Current Objective:
 - ✔️ update andoind versioning and java version
 - Bullet Colission with environment 
   - Maybe use the AABB collider in weapon depot
+  - ✔️ set the width and height
+  -  Collide using the AABB collider
 - Bullet strikes surface animation
 - Bullet sensors added to play correct bullet striking animation based on how it collided
